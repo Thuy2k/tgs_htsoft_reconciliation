@@ -102,12 +102,14 @@ jQuery(document).ready(function($) {
             // Vertical list item (sidebar) - CHỈ LƯU site_code, không lưu items JSON
             $siteList.append(`
                 <a href="#" class="list-group-item list-group-item-action ${isActive}"
-                   data-site-code="${tab.site_code}">
+                   data-site-code="${tab.site_code}"
+                   data-site-name="${tab.site_name || ''}">
                     <div class="d-flex w-100 justify-content-between align-items-center">
                         <div>
-                            <h6 class="mb-0">
+                            <h6 class="mb-1">
                                 <i class="bx bx-store me-2"></i>Mã ${tab.site_code}
                             </h6>
+                            ${tab.site_name ? `<small class="text-muted">${tab.site_name}</small>` : ''}
                         </div>
                         <span class="badge bg-secondary">${tab.total_items}</span>
                     </div>
