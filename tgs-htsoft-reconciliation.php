@@ -120,11 +120,31 @@ class TGS_HTSOFT_Reconciliation {
         check_ajax_referer('tgs_htsoft_recon_nonce', 'nonce');
 
         try {
+            global $wpdb;
             $excel_data = json_decode(stripslashes($_POST['excel_data']), true);
             $selected_sheet = sanitize_text_field($_POST['selected_sheet']);
 
             $parser = new TGS_HTSOFT_Excel_Parser();
             $result = $parser->parse_and_group($excel_data, $selected_sheet);
+
+            // Bổ sung tên website cho mỗi tab
+            foreach ($result['tabs'] as &$tab) {
+                $site_code = $tab['site_code'];
+
+                // Tìm blog từ site_code
+                $blog = $wpdb->get_row($wpdb->prepare(
+                    "SELECT blog_id FROM {$wpdb->blogs} WHERE tgs_site_code = %s",
+                    $site_code
+                ));
+
+                if ($blog) {
+                    switch_to_blog($blog->blog_id);
+                    $tab['site_name'] = get_bloginfo('name');
+                    restore_current_blog();
+                } else {
+                    $tab['site_name'] = '';
+                }
+            }
 
             wp_send_json_success($result);
         } catch (Exception $e) {
