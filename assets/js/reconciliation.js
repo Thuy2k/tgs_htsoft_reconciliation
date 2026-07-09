@@ -245,6 +245,9 @@ jQuery(document).ready(function($) {
                     <button class="btn btn-sm btn-outline-secondary" onclick="clearSelection('${siteCode}')">
                         <i class="bx bx-x"></i> Bỏ chọn
                     </button>
+                    <button class="btn btn-sm btn-outline-success" onclick="exportTabToExcel('${siteCode}')">
+                        <i class="bx bx-download"></i> Xuất Excel
+                    </button>
                 </div>
                 <button class="btn btn-sm btn-success" onclick="openAdjustmentModal('${siteCode}')" disabled id="createAdjBtn-${siteCode}">
                     <i class="bx bx-plus-circle me-1"></i>Tạo phiếu (<span class="selected-count-${siteCode}">0</span>)
@@ -482,4 +485,168 @@ jQuery(document).ready(function($) {
             $alert.addClass('d-none');
         }, 5000);
     }
+
+    // Export single tab to Excel
+    window.exportTabToExcel = function(siteCode) {
+        const data = currentSiteData[siteCode];
+        if (!data || !data.comparison) {
+            showAlert('warning', 'Chưa có dữ liệu để xuất');
+            return;
+        }
+
+        // Lọc chỉ sản phẩm bị lệch
+        const diffItems = data.comparison.filter(item => Math.abs(item.diff) > 0.01);
+
+        if (diffItems.length === 0) {
+            showAlert('info', 'Không có sản phẩm nào bị chênh lệch');
+            return;
+        }
+
+        // Tạo workbook
+        const wb = XLSX.utils.book_new();
+
+        // Tạo data cho sheet
+        const wsData = [
+            ['Báo cáo sản phẩm chênh lệch tồn kho'],
+            ['Website:', data.site_name || `Mã ${siteCode}`],
+            ['Mã kho:', siteCode],
+            ['Ngày xuất:', new Date().toLocaleString('vi-VN')],
+            ['Tổng SP chênh lệch:', diffItems.length],
+            [],
+            ['STT', 'Mã hàng', 'Tên sản phẩm', 'Tồn HTSOFT', 'Tồn hệ thống', 'Chênh lệch']
+        ];
+
+        diffItems.forEach((item, idx) => {
+            wsData.push([
+                idx + 1,
+                item.sku,
+                item.global_product_name || item.product_name,
+                item.excel_qty,
+                item.system_qty,
+                item.diff
+            ]);
+        });
+
+        const ws = XLSX.utils.aoa_to_sheet(wsData);
+
+        // Định dạng cột
+        ws['!cols'] = [
+            { wch: 5 },  // STT
+            { wch: 15 }, // SKU
+            { wch: 40 }, // Tên
+            { wch: 12 }, // Tồn HTSOFT
+            { wch: 12 }, // Tồn HT
+            { wch: 12 }  // Chênh lệch
+        ];
+
+        XLSX.utils.book_append_sheet(wb, ws, siteCode.substring(0, 31));
+
+        const fileName = `Chenh_lech_${siteCode}_${new Date().getTime()}.xlsx`;
+        XLSX.writeFile(wb, fileName);
+
+        showAlert('success', `Đã xuất ${diffItems.length} sản phẩm ra Excel`);
+    };
+
+    // Export all tabs to Excel
+    window.exportAllToExcel = async function() {
+        const allSiteCodes = Object.keys(window.tabItemsCache || {});
+
+        if (allSiteCodes.length === 0) {
+            showAlert('warning', 'Không có dữ liệu để xuất');
+            return;
+        }
+
+        showAlert('info', 'Đang tải dữ liệu các website...');
+        $('#exportAllBtn').prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span>Đang xử lý...');
+
+        // Load tất cả tab chưa có data
+        for (const siteCode of allSiteCodes) {
+            if (!currentSiteData[siteCode]) {
+                const items = window.tabItemsCache[siteCode];
+                await new Promise((resolve) => {
+                    $.ajax({
+                        url: ajaxUrl,
+                        method: 'POST',
+                        data: {
+                            action: 'tgs_htsoft_get_tab_data',
+                            nonce: nonce,
+                            site_code: siteCode,
+                            excel_items: JSON.stringify(items)
+                        },
+                        success: function(response) {
+                            if (response.success) {
+                                currentSiteData[siteCode] = response.data;
+                            }
+                            resolve();
+                        },
+                        error: function() {
+                            resolve();
+                        }
+                    });
+                });
+            }
+        }
+
+        // Tạo workbook với nhiều sheet
+        const wb = XLSX.utils.book_new();
+        let totalDiffCount = 0;
+
+        allSiteCodes.forEach((siteCode) => {
+            const data = currentSiteData[siteCode];
+            if (!data || !data.comparison) return;
+
+            // Lọc sản phẩm bị lệch
+            const diffItems = data.comparison.filter(item => Math.abs(item.diff) > 0.01);
+            if (diffItems.length === 0) return;
+
+            totalDiffCount += diffItems.length;
+
+            // Tạo data cho sheet
+            const wsData = [
+                ['Báo cáo chênh lệch tồn kho'],
+                ['Website:', data.site_name || `Mã ${siteCode}`],
+                ['Mã kho:', siteCode],
+                ['Số SP chênh lệch:', diffItems.length],
+                [],
+                ['STT', 'Mã hàng', 'Tên sản phẩm', 'Tồn HTSOFT', 'Tồn hệ thống', 'Chênh lệch']
+            ];
+
+            diffItems.forEach((item, idx) => {
+                wsData.push([
+                    idx + 1,
+                    item.sku,
+                    item.global_product_name || item.product_name,
+                    item.excel_qty,
+                    item.system_qty,
+                    item.diff
+                ]);
+            });
+
+            const ws = XLSX.utils.aoa_to_sheet(wsData);
+            ws['!cols'] = [
+                { wch: 5 },
+                { wch: 15 },
+                { wch: 40 },
+                { wch: 12 },
+                { wch: 12 },
+                { wch: 12 }
+            ];
+
+            // Tên sheet: Mã shop (tối đa 31 ký tự)
+            const sheetName = siteCode.substring(0, 31);
+            XLSX.utils.book_append_sheet(wb, ws, sheetName);
+        });
+
+        if (totalDiffCount === 0) {
+            showAlert('info', 'Không có sản phẩm nào bị chênh lệch trong tất cả các website');
+            $('#exportAllBtn').prop('disabled', false).html('<i class="bx bx-download me-1"></i>Xuất Excel tất cả');
+            return;
+        }
+
+        const fileName = `Chenh_lech_tat_ca_${new Date().getTime()}.xlsx`;
+        XLSX.writeFile(wb, fileName);
+
+        showAlert('success', `Đã xuất ${totalDiffCount} sản phẩm từ ${allSiteCodes.length} website`);
+        $('#exportAllBtn').prop('disabled', false).html('<i class="bx bx-download me-1"></i>Xuất Excel tất cả');
+    };
 });

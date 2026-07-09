@@ -56,9 +56,14 @@ if (!defined('ABSPATH')) {
             Kết quả phân tích
             <span class="badge bg-primary ms-2" id="totalSitesBadge">0 website</span>
         </h5>
-        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="location.reload()">
-            <i class="bx bx-refresh me-1"></i>Upload file mới
-        </button>
+        <div class="d-flex gap-2">
+            <button type="button" class="btn btn-sm btn-success" id="exportAllBtn" onclick="exportAllToExcel()">
+                <i class="bx bx-download me-1"></i>Xuất Excel tất cả
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="location.reload()">
+                <i class="bx bx-refresh me-1"></i>Upload file mới
+            </button>
+        </div>
     </div>
     <div class="card-body p-0">
         <div class="row g-0">
