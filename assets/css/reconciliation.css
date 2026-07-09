@@ -1,0 +1,370 @@
+/* TGS HTSOFT Reconciliation Styles */
+
+.tgs-htsoft-recon-page {
+    padding: 20px;
+    max-width: 100%;
+}
+
+.htsoft-tab-loading {
+    text-align: center;
+    padding: 60px 20px;
+    color: #6c757d;
+}
+
+.htsoft-tab-loading .spinner-border {
+    width: 3rem;
+    height: 3rem;
+}
+
+.htsoft-comparison-table {
+    font-size: 0.9rem;
+}
+
+.htsoft-comparison-table th {
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.5px;
+    color: #495057;
+    background: #f8f9fa !important;
+    border-bottom: 2px solid #dee2e6;
+}
+
+.htsoft-comparison-table td {
+    vertical-align: middle;
+    padding: 10px 12px;
+}
+
+.htsoft-comparison-table .diff-positive {
+    color: #28a745;
+    font-weight: 600;
+}
+
+.htsoft-comparison-table .diff-negative {
+    color: #dc3545;
+    font-weight: 600;
+}
+
+.htsoft-comparison-table .diff-zero {
+    color: #6c757d;
+}
+
+.htsoft-comparison-table code {
+    font-size: 0.85rem;
+    padding: 2px 6px;
+    background: #f1f3f5;
+    border-radius: 3px;
+    color: #495057;
+}
+
+.htsoft-comparison-table .table-warning {
+    background-color: #fff3cd !important;
+}
+
+.htsoft-stats {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 25px;
+    flex-wrap: wrap;
+}
+
+.htsoft-stat-box {
+    flex: 1;
+    min-width: 180px;
+    padding: 20px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+    border: 1px solid #dee2e6;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.htsoft-stat-box:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.htsoft-stat-box h6 {
+    margin: 0 0 12px 0;
+    font-size: 0.85rem;
+    color: #6c757d;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.htsoft-stat-box .stat-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #212529;
+    line-height: 1;
+}
+
+.htsoft-stat-box .stat-value.text-danger {
+    color: #dc3545 !important;
+}
+
+.htsoft-stat-box .stat-value.text-success {
+    color: #28a745 !important;
+}
+
+/* Sticky header */
+.sticky-top {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: #fff;
+}
+
+/* Tabs styling */
+.nav-tabs .nav-link {
+    color: #495057;
+    font-weight: 500;
+    border: none;
+    border-bottom: 3px solid transparent;
+    transition: all 0.2s;
+}
+
+.nav-tabs .nav-link:hover {
+    color: #0d6efd;
+    border-bottom-color: #0d6efd;
+    background: transparent;
+}
+
+.nav-tabs .nav-link.active {
+    color: #0d6efd;
+    background: transparent;
+    border-bottom-color: #0d6efd;
+    font-weight: 600;
+}
+
+.nav-tabs .nav-link .badge {
+    font-size: 0.7rem;
+    padding: 3px 6px;
+}
+
+/* Modal adjustments */
+#adjustmentModal .modal-body {
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
+#adjustmentItemsPreview td {
+    font-size: 0.85rem;
+    padding: 8px;
+}
+
+/* Card improvements */
+.card {
+    border: 1px solid #e0e0e0;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    margin-bottom: 20px;
+}
+
+.card-header {
+    background: #f8f9fa;
+    border-bottom: 2px solid #e0e0e0;
+    padding: 15px 20px;
+}
+
+.card-header .card-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #212529;
+}
+
+.card-body {
+    padding: 20px;
+}
+
+/* Form elements */
+.form-label.fw-bold {
+    font-size: 0.9rem;
+    color: #495057;
+    margin-bottom: 8px;
+}
+
+.form-control, .form-select {
+    border: 1px solid #ced4da;
+    border-radius: 6px;
+    padding: 10px 12px;
+    font-size: 0.95rem;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.15);
+}
+
+/* Buttons */
+.btn {
+    border-radius: 6px;
+    padding: 8px 16px;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.btn-sm {
+    padding: 6px 12px;
+    font-size: 0.85rem;
+}
+
+.btn-primary {
+    background: #0d6efd;
+    border-color: #0d6efd;
+}
+
+.btn-primary:hover {
+    background: #0b5ed7;
+    border-color: #0a58ca;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(13, 110, 253, 0.3);
+}
+
+.btn-success {
+    background: #28a745;
+    border-color: #28a745;
+}
+
+.btn-success:hover {
+    background: #218838;
+    border-color: #1e7e34;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(40, 167, 69, 0.3);
+}
+
+/* Alert styling */
+#htsoftAlert {
+    border-radius: 8px;
+    border-left: 4px solid;
+    padding: 15px 20px;
+    margin-bottom: 20px;
+}
+
+#htsoftAlert.alert-success {
+    border-left-color: #28a745;
+}
+
+#htsoftAlert.alert-danger {
+    border-left-color: #dc3545;
+}
+
+#htsoftAlert.alert-warning {
+    border-left-color: #ffc107;
+}
+
+#htsoftAlert.alert-info {
+    border-left-color: #17a2b8;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .htsoft-stats {
+        flex-direction: column;
+    }
+
+    .htsoft-stat-box {
+        min-width: 100%;
+    }
+
+    .htsoft-comparison-table {
+        font-size: 0.8rem;
+    }
+
+    .nav-tabs {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .nav-tabs .nav-link {
+        white-space: nowrap;
+    }
+}
+
+/* Loading spinner */
+.spinner-border {
+    vertical-align: middle;
+}
+
+/* Checkbox alignment */
+.form-check-input {
+    cursor: pointer;
+    width: 18px;
+    height: 18px;
+}
+
+.form-check-input:checked {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+}
+
+/* Table hover effect */
+.table-hover tbody tr:hover {
+    background-color: rgba(13, 110, 253, 0.05);
+    cursor: pointer;
+}
+
+/* Sidebar (left column) */
+.htsoft-sidebar {
+    background: #f8f9fa;
+    min-height: 600px;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.htsoft-site-list {
+    position: sticky;
+    top: 0;
+}
+
+.htsoft-site-list .list-group-item {
+    border-left: 3px solid transparent;
+    border-right: none;
+    border-top: none;
+    border-bottom: 1px solid #e0e0e0;
+    border-radius: 0;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+}
+
+.htsoft-site-list .list-group-item h6 {
+    font-size: 0.9rem;
+    font-weight: 500;
+    margin: 0;
+}
+
+.htsoft-site-list .list-group-item:hover {
+    background: #e9ecef;
+    border-left-color: #0d6efd;
+}
+
+.htsoft-site-list .list-group-item.active {
+    background: #0d6efd;
+    color: #ffffff !important;
+    border-left-color: #0a58ca;
+    font-weight: 600;
+}
+
+.htsoft-site-list .list-group-item.active h6,
+.htsoft-site-list .list-group-item.active i {
+    color: #ffffff !important;
+}
+
+.htsoft-site-list .list-group-item.active .badge {
+    background: rgba(255, 255, 255, 0.25) !important;
+    color: #ffffff !important;
+    font-weight: 600;
+}
+
+/* Content area (right column) */
+.htsoft-content {
+    background: white;
+    min-height: 600px;
+    max-height: 80vh;
+    overflow-y: auto;
+}
