@@ -86,12 +86,12 @@ class TGS_HTSOFT_Reconciliation {
             return;
         }
 
-        // SheetJS library for Excel parsing
+        // SheetJS with style support (xlsx-js-style - drop-in replacement)
         wp_enqueue_script(
             'sheetjs',
-            'https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js',
+            'https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js',
             array(),
-            '0.20.1',
+            '1.2.0',
             true
         );
 
@@ -204,6 +204,34 @@ class TGS_HTSOFT_Reconciliation {
                 );
             }
 
+            // Lấy ghi chú phiếu bán hàng trong ngày hôm nay
+            $sales_notes = array();
+            $blog_prefix = $wpdb->get_blog_prefix($blog_id);
+            $today_start = date('Y-m-d 00:00:00');
+            $today_end = date('Y-m-d 23:59:59');
+
+            $notes_results = $wpdb->get_results($wpdb->prepare(
+                "SELECT local_ledger_note, created_at
+                 FROM {$blog_prefix}local_ledger
+                 WHERE local_ledger_type = 10
+                 AND local_ledger_approver_status = 1
+                 AND local_ledger_note LIKE %s
+                 AND created_at BETWEEN %s AND %s
+                 ORDER BY created_at DESC",
+                '%Ghi chú%',
+                $today_start,
+                $today_end
+            ));
+
+            if ($notes_results) {
+                foreach ($notes_results as $note_row) {
+                    $sales_notes[] = array(
+                        'note' => $note_row->local_ledger_note,
+                        'created_at' => $note_row->created_at,
+                    );
+                }
+            }
+
             wp_send_json_success(array(
                 'blog_id' => $blog_id,
                 'site_name' => $site_name,
@@ -211,7 +239,8 @@ class TGS_HTSOFT_Reconciliation {
                 'total_items' => count($comparison),
                 'items_with_diff' => count(array_filter($comparison, function($item) {
                     return abs($item['diff']) > 0.01;
-                }))
+                })),
+                'sales_notes' => $sales_notes,
             ));
 
         } catch (Exception $e) {

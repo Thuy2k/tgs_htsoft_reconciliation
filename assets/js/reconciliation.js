@@ -486,6 +486,90 @@ jQuery(document).ready(function($) {
         }, 5000);
     }
 
+    // Helper: Thêm khối ghi chú bán hàng vào sheet Excel bên phải
+    function addSalesNotesToSheet(ws, wsData, salesNotes, startCol) {
+        if (!salesNotes || salesNotes.length === 0) return;
+
+        const colLetter = XLSX.utils.encode_col(startCol);
+        const colLetter2 = XLSX.utils.encode_col(startCol + 1);
+        const colLetter3 = XLSX.utils.encode_col(startCol + 2);
+
+        // Header khối ghi chú
+        const headerCell = `${colLetter}1`;
+        ws[headerCell] = { v: '📋 GHI CHÚ BÁN HÀNG TRONG NGÀY', t: 's' };
+        ws[headerCell].s = {
+            font: { bold: true, color: { rgb: 'FFFFFF' }, sz: 12 },
+            fill: { fgColor: { rgb: '4472C4' } },
+            alignment: { horizontal: 'center' }
+        };
+
+        // Merge header
+        if (!ws['!merges']) ws['!merges'] = [];
+        ws['!merges'].push({ s: { r: 0, c: startCol }, e: { r: 0, c: startCol + 2 } });
+
+        // Sub header
+        const subHeaderRow = 2;
+        ws[`${colLetter}${subHeaderRow}`] = { v: 'STT', t: 's' };
+        ws[`${colLetter}${subHeaderRow}`].s = {
+            font: { bold: true, color: { rgb: 'FFFFFF' } },
+            fill: { fgColor: { rgb: 'ED7D31' } },
+            alignment: { horizontal: 'center' }
+        };
+        ws[`${colLetter2}${subHeaderRow}`] = { v: 'Nội dung ghi chú', t: 's' };
+        ws[`${colLetter2}${subHeaderRow}`].s = {
+            font: { bold: true, color: { rgb: 'FFFFFF' } },
+            fill: { fgColor: { rgb: 'ED7D31' } },
+            alignment: { horizontal: 'center' }
+        };
+        ws[`${colLetter3}${subHeaderRow}`] = { v: 'Thời gian', t: 's' };
+        ws[`${colLetter3}${subHeaderRow}`].s = {
+            font: { bold: true, color: { rgb: 'FFFFFF' } },
+            fill: { fgColor: { rgb: 'ED7D31' } },
+            alignment: { horizontal: 'center' }
+        };
+
+        // Data rows
+        salesNotes.forEach((note, idx) => {
+            const rowNum = idx + 3;
+            const bgColor = idx % 2 === 0 ? 'FFF2CC' : 'FFFFFF';
+
+            ws[`${colLetter}${rowNum}`] = { v: idx + 1, t: 'n' };
+            ws[`${colLetter}${rowNum}`].s = {
+                fill: { fgColor: { rgb: bgColor } },
+                alignment: { horizontal: 'center', vertical: 'center' },
+                border: { bottom: { style: 'thin', color: { rgb: 'D9D9D9' } } }
+            };
+
+            ws[`${colLetter2}${rowNum}`] = { v: note.note, t: 's' };
+            ws[`${colLetter2}${rowNum}`].s = {
+                fill: { fgColor: { rgb: bgColor } },
+                alignment: { wrapText: true, vertical: 'center' },
+                border: { bottom: { style: 'thin', color: { rgb: 'D9D9D9' } } }
+            };
+
+            const timeStr = note.created_at ? new Date(note.created_at).toLocaleString('vi-VN') : '';
+            ws[`${colLetter3}${rowNum}`] = { v: timeStr, t: 's' };
+            ws[`${colLetter3}${rowNum}`].s = {
+                fill: { fgColor: { rgb: bgColor } },
+                alignment: { horizontal: 'center', vertical: 'center' },
+                border: { bottom: { style: 'thin', color: { rgb: 'D9D9D9' } } }
+            };
+        });
+
+        // Tổng số ghi chú
+        const totalRow = salesNotes.length + 3;
+        ws[`${colLetter}${totalRow}`] = { v: `Tổng: ${salesNotes.length} ghi chú`, t: 's' };
+        ws[`${colLetter}${totalRow}`].s = {
+            font: { bold: true, italic: true, color: { rgb: '4472C4' } }
+        };
+
+        // Update range
+        const currentRange = XLSX.utils.decode_range(ws['!ref']);
+        const maxRow = Math.max(currentRange.e.r, totalRow - 1);
+        const maxCol = Math.max(currentRange.e.c, startCol + 2);
+        ws['!ref'] = XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: maxRow, c: maxCol } });
+    }
+
     // Export single tab to Excel
     window.exportTabToExcel = function(siteCode) {
         const data = currentSiteData[siteCode];
@@ -536,8 +620,17 @@ jQuery(document).ready(function($) {
             { wch: 40 }, // Tên
             { wch: 12 }, // Tồn HTSOFT
             { wch: 12 }, // Tồn HT
-            { wch: 12 }  // Chênh lệch
+            { wch: 12 }, // Chênh lệch
+            { wch: 3 },  // Khoảng trống
+            { wch: 5 },  // STT ghi chú
+            { wch: 55 }, // Nội dung ghi chú
+            { wch: 20 }, // Thời gian
         ];
+
+        // Thêm khối ghi chú bán hàng bên phải (cột H = index 7)
+        if (data.sales_notes && data.sales_notes.length > 0) {
+            addSalesNotesToSheet(ws, wsData, data.sales_notes, 7);
+        }
 
         XLSX.utils.book_append_sheet(wb, ws, siteCode.substring(0, 31));
 
@@ -629,8 +722,17 @@ jQuery(document).ready(function($) {
                 { wch: 40 },
                 { wch: 12 },
                 { wch: 12 },
-                { wch: 12 }
+                { wch: 12 },
+                { wch: 3 },  // Khoảng trống
+                { wch: 5 },  // STT ghi chú
+                { wch: 55 }, // Nội dung ghi chú
+                { wch: 20 }, // Thời gian
             ];
+
+            // Thêm khối ghi chú bán hàng bên phải
+            if (data.sales_notes && data.sales_notes.length > 0) {
+                addSalesNotesToSheet(ws, wsData, data.sales_notes, 7);
+            }
 
             // Tên sheet: Mã shop (tối đa 31 ký tự)
             const sheetName = siteCode.substring(0, 31);
