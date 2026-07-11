@@ -486,65 +486,187 @@ jQuery(document).ready(function($) {
         }, 5000);
     }
 
+    // Helper: Style cho phần báo cáo chính (bên trái)
+    function styleMainReport(ws, diffItems, headerRowIdx) {
+        const borderThin = {
+            top: { style: 'thin', color: { rgb: 'B4B4B4' } },
+            bottom: { style: 'thin', color: { rgb: 'B4B4B4' } },
+            left: { style: 'thin', color: { rgb: 'B4B4B4' } },
+            right: { style: 'thin', color: { rgb: 'B4B4B4' } }
+        };
+
+        // Row 1: Tiêu đề chính - nền xanh đậm
+        for (let c = 0; c < 6; c++) {
+            const cell = XLSX.utils.encode_cell({ r: 0, c });
+            if (!ws[cell]) ws[cell] = { v: '', t: 's' };
+            ws[cell].s = {
+                font: { bold: true, color: { rgb: 'FFFFFF' }, sz: 14 },
+                fill: { fgColor: { rgb: '1F4E79' } },
+                alignment: { horizontal: 'center', vertical: 'center' }
+            };
+        }
+        if (!ws['!merges']) ws['!merges'] = [];
+        ws['!merges'].push({ s: { r: 0, c: 0 }, e: { r: 0, c: 5 } });
+
+        // Row 2-5: Thông tin meta - nền xám nhạt, merge cột B-F cho value
+        for (let r = 1; r <= 4; r++) {
+            for (let c = 0; c < 6; c++) {
+                const cell = XLSX.utils.encode_cell({ r, c });
+                if (!ws[cell]) ws[cell] = { v: '', t: 's' };
+                ws[cell].s = {
+                    font: c === 0 ? { bold: true, color: { rgb: '1F4E79' }, sz: 11 } : { color: { rgb: '333333' }, sz: 11 },
+                    fill: { fgColor: { rgb: 'F2F7FC' } },
+                    alignment: { vertical: 'center' },
+                    border: borderThin
+                };
+            }
+            // Merge cột B-F (index 1-5) cho mỗi dòng meta
+            ws['!merges'].push({ s: { r, c: 1 }, e: { r, c: 5 } });
+        }
+
+        // Row header bảng (row 7 = index 6) - nền teal đậm
+        for (let c = 0; c < 6; c++) {
+            const cell = XLSX.utils.encode_cell({ r: headerRowIdx, c });
+            if (!ws[cell]) ws[cell] = { v: '', t: 's' };
+            ws[cell].s = {
+                font: { bold: true, color: { rgb: 'FFFFFF' }, sz: 11 },
+                fill: { fgColor: { rgb: '2E75B6' } },
+                alignment: { horizontal: 'center', vertical: 'center' },
+                border: borderThin
+            };
+        }
+
+        // Data rows - zebra + highlight chênh lệch
+        diffItems.forEach((item, idx) => {
+            const rowIdx = headerRowIdx + 1 + idx;
+            const bgColor = idx % 2 === 0 ? 'FFFFFF' : 'F5F9FD';
+
+            for (let c = 0; c < 6; c++) {
+                const cell = XLSX.utils.encode_cell({ r: rowIdx, c });
+                if (!ws[cell]) ws[cell] = { v: '', t: 's' };
+
+                let cellStyle = {
+                    fill: { fgColor: { rgb: bgColor } },
+                    alignment: { vertical: 'center' },
+                    border: borderThin
+                };
+
+                // Cột chênh lệch (col 5): highlight đỏ/xanh
+                if (c === 5) {
+                    if (item.diff < 0) {
+                        cellStyle.font = { bold: true, color: { rgb: 'C00000' } };
+                        cellStyle.fill = { fgColor: { rgb: 'FDE9E9' } };
+                    } else if (item.diff > 0) {
+                        cellStyle.font = { bold: true, color: { rgb: '207245' } };
+                        cellStyle.fill = { fgColor: { rgb: 'E6F4EA' } };
+                    }
+                    cellStyle.alignment = { horizontal: 'right', vertical: 'center' };
+                }
+
+                // Cột số (3, 4): canh phải
+                if (c === 3 || c === 4) {
+                    cellStyle.alignment = { horizontal: 'right', vertical: 'center' };
+                }
+
+                // Cột STT: canh giữa
+                if (c === 0) {
+                    cellStyle.alignment = { horizontal: 'center', vertical: 'center' };
+                }
+
+                ws[cell].s = cellStyle;
+            }
+        });
+
+        // Dòng tổng kết cuối bảng
+        const totalRowIdx = headerRowIdx + 1 + diffItems.length;
+        const totalCell = XLSX.utils.encode_cell({ r: totalRowIdx, c: 0 });
+        ws[totalCell] = { v: `Tổng: ${diffItems.length} sản phẩm chênh lệch`, t: 's' };
+        ws[totalCell].s = {
+            font: { bold: true, italic: true, color: { rgb: '1F4E79' }, sz: 10 },
+            fill: { fgColor: { rgb: 'D6E4F0' } }
+        };
+        ws['!merges'].push({ s: { r: totalRowIdx, c: 0 }, e: { r: totalRowIdx, c: 5 } });
+        for (let c = 1; c < 6; c++) {
+            const cell = XLSX.utils.encode_cell({ r: totalRowIdx, c });
+            if (!ws[cell]) ws[cell] = { v: '', t: 's' };
+            ws[cell].s = { fill: { fgColor: { rgb: 'D6E4F0' } } };
+        }
+    }
+
     // Helper: Thêm khối ghi chú bán hàng vào sheet Excel bên phải
-    function addSalesNotesToSheet(ws, wsData, salesNotes, startCol) {
+    function addSalesNotesToSheet(ws, salesNotes, startCol) {
         if (!salesNotes || salesNotes.length === 0) return;
 
         const colLetter = XLSX.utils.encode_col(startCol);
         const colLetter2 = XLSX.utils.encode_col(startCol + 1);
         const colLetter3 = XLSX.utils.encode_col(startCol + 2);
 
-        // Header khối ghi chú
+        const borderThin = {
+            top: { style: 'thin', color: { rgb: 'B4B4B4' } },
+            bottom: { style: 'thin', color: { rgb: 'B4B4B4' } },
+            left: { style: 'thin', color: { rgb: 'B4B4B4' } },
+            right: { style: 'thin', color: { rgb: 'B4B4B4' } }
+        };
+
+        // Header khối ghi chú - nền tím đậm
         const headerCell = `${colLetter}1`;
         ws[headerCell] = { v: '📋 GHI CHÚ BÁN HÀNG TRONG NGÀY', t: 's' };
         ws[headerCell].s = {
             font: { bold: true, color: { rgb: 'FFFFFF' }, sz: 12 },
-            fill: { fgColor: { rgb: '4472C4' } },
-            alignment: { horizontal: 'center' }
+            fill: { fgColor: { rgb: '7B2D8B' } },
+            alignment: { horizontal: 'center', vertical: 'center' }
         };
+        // Style cho merged cells
+        ws[`${colLetter2}1`] = { v: '', t: 's' };
+        ws[`${colLetter2}1`].s = { fill: { fgColor: { rgb: '7B2D8B' } } };
+        ws[`${colLetter3}1`] = { v: '', t: 's' };
+        ws[`${colLetter3}1`].s = { fill: { fgColor: { rgb: '7B2D8B' } } };
 
         // Merge header
         if (!ws['!merges']) ws['!merges'] = [];
         ws['!merges'].push({ s: { r: 0, c: startCol }, e: { r: 0, c: startCol + 2 } });
 
-        // Sub header
+        // Sub header - nền cam đậm
         const subHeaderRow = 2;
         ws[`${colLetter}${subHeaderRow}`] = { v: 'STT', t: 's' };
         ws[`${colLetter}${subHeaderRow}`].s = {
-            font: { bold: true, color: { rgb: 'FFFFFF' } },
-            fill: { fgColor: { rgb: 'ED7D31' } },
-            alignment: { horizontal: 'center' }
+            font: { bold: true, color: { rgb: 'FFFFFF' }, sz: 10 },
+            fill: { fgColor: { rgb: 'E74C3C' } },
+            alignment: { horizontal: 'center', vertical: 'center' },
+            border: borderThin
         };
         ws[`${colLetter2}${subHeaderRow}`] = { v: 'Nội dung ghi chú', t: 's' };
         ws[`${colLetter2}${subHeaderRow}`].s = {
-            font: { bold: true, color: { rgb: 'FFFFFF' } },
-            fill: { fgColor: { rgb: 'ED7D31' } },
-            alignment: { horizontal: 'center' }
+            font: { bold: true, color: { rgb: 'FFFFFF' }, sz: 10 },
+            fill: { fgColor: { rgb: 'E74C3C' } },
+            alignment: { horizontal: 'center', vertical: 'center' },
+            border: borderThin
         };
         ws[`${colLetter3}${subHeaderRow}`] = { v: 'Thời gian', t: 's' };
         ws[`${colLetter3}${subHeaderRow}`].s = {
-            font: { bold: true, color: { rgb: 'FFFFFF' } },
-            fill: { fgColor: { rgb: 'ED7D31' } },
-            alignment: { horizontal: 'center' }
+            font: { bold: true, color: { rgb: 'FFFFFF' }, sz: 10 },
+            fill: { fgColor: { rgb: 'E74C3C' } },
+            alignment: { horizontal: 'center', vertical: 'center' },
+            border: borderThin
         };
 
-        // Data rows
+        // Data rows - xen kẽ tím nhạt / trắng
         salesNotes.forEach((note, idx) => {
             const rowNum = idx + 3;
-            const bgColor = idx % 2 === 0 ? 'FFF2CC' : 'FFFFFF';
+            const bgColor = idx % 2 === 0 ? 'F5EEF8' : 'FFFFFF';
 
             ws[`${colLetter}${rowNum}`] = { v: idx + 1, t: 'n' };
             ws[`${colLetter}${rowNum}`].s = {
                 fill: { fgColor: { rgb: bgColor } },
                 alignment: { horizontal: 'center', vertical: 'center' },
-                border: { bottom: { style: 'thin', color: { rgb: 'D9D9D9' } } }
+                border: borderThin
             };
 
             ws[`${colLetter2}${rowNum}`] = { v: note.note, t: 's' };
             ws[`${colLetter2}${rowNum}`].s = {
                 fill: { fgColor: { rgb: bgColor } },
                 alignment: { wrapText: true, vertical: 'center' },
-                border: { bottom: { style: 'thin', color: { rgb: 'D9D9D9' } } }
+                border: borderThin
             };
 
             const timeStr = note.created_at ? new Date(note.created_at).toLocaleString('vi-VN') : '';
@@ -552,7 +674,7 @@ jQuery(document).ready(function($) {
             ws[`${colLetter3}${rowNum}`].s = {
                 fill: { fgColor: { rgb: bgColor } },
                 alignment: { horizontal: 'center', vertical: 'center' },
-                border: { bottom: { style: 'thin', color: { rgb: 'D9D9D9' } } }
+                border: borderThin
             };
         });
 
@@ -560,8 +682,14 @@ jQuery(document).ready(function($) {
         const totalRow = salesNotes.length + 3;
         ws[`${colLetter}${totalRow}`] = { v: `Tổng: ${salesNotes.length} ghi chú`, t: 's' };
         ws[`${colLetter}${totalRow}`].s = {
-            font: { bold: true, italic: true, color: { rgb: '4472C4' } }
+            font: { bold: true, italic: true, color: { rgb: '7B2D8B' } },
+            fill: { fgColor: { rgb: 'E8DAEF' } }
         };
+        ws[`${colLetter2}${totalRow}`] = { v: '', t: 's' };
+        ws[`${colLetter2}${totalRow}`].s = { fill: { fgColor: { rgb: 'E8DAEF' } } };
+        ws[`${colLetter3}${totalRow}`] = { v: '', t: 's' };
+        ws[`${colLetter3}${totalRow}`].s = { fill: { fgColor: { rgb: 'E8DAEF' } } };
+        ws['!merges'].push({ s: { r: totalRow - 1, c: startCol }, e: { r: totalRow - 1, c: startCol + 2 } });
 
         // Update range
         const currentRange = XLSX.utils.decode_range(ws['!ref']);
@@ -570,28 +698,10 @@ jQuery(document).ready(function($) {
         ws['!ref'] = XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: maxRow, c: maxCol } });
     }
 
-    // Export single tab to Excel
-    window.exportTabToExcel = function(siteCode) {
-        const data = currentSiteData[siteCode];
-        if (!data || !data.comparison) {
-            showAlert('warning', 'Chưa có dữ liệu để xuất');
-            return;
-        }
-
-        // Lọc chỉ sản phẩm bị lệch
-        const diffItems = data.comparison.filter(item => Math.abs(item.diff) > 0.01);
-
-        if (diffItems.length === 0) {
-            showAlert('info', 'Không có sản phẩm nào bị chênh lệch');
-            return;
-        }
-
-        // Tạo workbook
-        const wb = XLSX.utils.book_new();
-
-        // Tạo data cho sheet
+    // Helper: Tạo sheet đã styled hoàn chỉnh
+    function buildStyledSheet(data, siteCode, diffItems) {
         const wsData = [
-            ['Báo cáo sản phẩm chênh lệch tồn kho'],
+            ['BÁO CÁO CHÊNH LỆCH TỒN KHO'],
             ['Website:', data.site_name || `Mã ${siteCode}`],
             ['Mã kho:', siteCode],
             ['Ngày xuất:', new Date().toLocaleString('vi-VN')],
@@ -613,7 +723,6 @@ jQuery(document).ready(function($) {
 
         const ws = XLSX.utils.aoa_to_sheet(wsData);
 
-        // Định dạng cột
         ws['!cols'] = [
             { wch: 5 },  // STT
             { wch: 15 }, // SKU
@@ -627,10 +736,37 @@ jQuery(document).ready(function($) {
             { wch: 20 }, // Thời gian
         ];
 
-        // Thêm khối ghi chú bán hàng bên phải (cột H = index 7)
+        // Chiều cao hàng tiêu đề
+        ws['!rows'] = [{ hpt: 28 }];
+
+        // Style phần báo cáo chính
+        styleMainReport(ws, diffItems, 6);
+
+        // Thêm khối ghi chú bên phải
         if (data.sales_notes && data.sales_notes.length > 0) {
-            addSalesNotesToSheet(ws, wsData, data.sales_notes, 7);
+            addSalesNotesToSheet(ws, data.sales_notes, 7);
         }
+
+        return ws;
+    }
+
+    // Export single tab to Excel
+    window.exportTabToExcel = function(siteCode) {
+        const data = currentSiteData[siteCode];
+        if (!data || !data.comparison) {
+            showAlert('warning', 'Chưa có dữ liệu để xuất');
+            return;
+        }
+
+        const diffItems = data.comparison.filter(item => Math.abs(item.diff) > 0.01);
+
+        if (diffItems.length === 0) {
+            showAlert('info', 'Không có sản phẩm nào bị chênh lệch');
+            return;
+        }
+
+        const wb = XLSX.utils.book_new();
+        const ws = buildStyledSheet(data, siteCode, diffItems);
 
         XLSX.utils.book_append_sheet(wb, ws, siteCode.substring(0, 31));
 
@@ -688,53 +824,12 @@ jQuery(document).ready(function($) {
             const data = currentSiteData[siteCode];
             if (!data || !data.comparison) return;
 
-            // Lọc sản phẩm bị lệch
             const diffItems = data.comparison.filter(item => Math.abs(item.diff) > 0.01);
             if (diffItems.length === 0) return;
 
             totalDiffCount += diffItems.length;
 
-            // Tạo data cho sheet
-            const wsData = [
-                ['Báo cáo chênh lệch tồn kho'],
-                ['Website:', data.site_name || `Mã ${siteCode}`],
-                ['Mã kho:', siteCode],
-                ['Số SP chênh lệch:', diffItems.length],
-                [],
-                ['STT', 'Mã hàng', 'Tên sản phẩm', 'Tồn HTSOFT', 'Tồn hệ thống', 'Chênh lệch']
-            ];
-
-            diffItems.forEach((item, idx) => {
-                wsData.push([
-                    idx + 1,
-                    item.sku,
-                    item.global_product_name || item.product_name,
-                    item.excel_qty,
-                    item.system_qty,
-                    item.diff
-                ]);
-            });
-
-            const ws = XLSX.utils.aoa_to_sheet(wsData);
-            ws['!cols'] = [
-                { wch: 5 },
-                { wch: 15 },
-                { wch: 40 },
-                { wch: 12 },
-                { wch: 12 },
-                { wch: 12 },
-                { wch: 3 },  // Khoảng trống
-                { wch: 5 },  // STT ghi chú
-                { wch: 55 }, // Nội dung ghi chú
-                { wch: 20 }, // Thời gian
-            ];
-
-            // Thêm khối ghi chú bán hàng bên phải
-            if (data.sales_notes && data.sales_notes.length > 0) {
-                addSalesNotesToSheet(ws, wsData, data.sales_notes, 7);
-            }
-
-            // Tên sheet: Mã shop (tối đa 31 ký tự)
+            const ws = buildStyledSheet(data, siteCode, diffItems);
             const sheetName = siteCode.substring(0, 31);
             XLSX.utils.book_append_sheet(wb, ws, sheetName);
         });
