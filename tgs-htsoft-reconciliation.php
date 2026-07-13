@@ -204,12 +204,37 @@ class TGS_HTSOFT_Reconciliation {
                 );
             }
 
-            // Lấy ghi chú phiếu bán hàng trong ngày hôm nay
-            $sales_notes = array();
+            // Lấy thống kê ngày hôm nay
             $blog_prefix = $wpdb->get_blog_prefix($blog_id);
             $today_start = date('Y-m-d 00:00:00');
             $today_end = date('Y-m-d 23:59:59');
 
+            // Số đơn bán hàng
+            $orders_count = $wpdb->get_var($wpdb->prepare(
+                "SELECT COUNT(*)
+                 FROM {$blog_prefix}local_ledger
+                 WHERE local_ledger_type = 10
+                 AND local_ledger_approver_status = 1
+                 AND (is_deleted = 0 OR is_deleted IS NULL)
+                 AND created_at BETWEEN %s AND %s",
+                $today_start,
+                $today_end
+            ));
+
+            // Tổng doanh thu (phiếu thu type = 7)
+            $revenue = $wpdb->get_var($wpdb->prepare(
+                "SELECT SUM(local_ledger_total_amount)
+                 FROM {$blog_prefix}local_ledger
+                 WHERE local_ledger_type = 7
+                 AND local_ledger_approver_status = 1
+                 AND (is_deleted = 0 OR is_deleted IS NULL)
+                 AND created_at BETWEEN %s AND %s",
+                $today_start,
+                $today_end
+            ));
+
+            // Ghi chú phiếu bán hàng
+            $sales_notes = array();
             $notes_results = $wpdb->get_results($wpdb->prepare(
                 "SELECT local_ledger_note, created_at
                  FROM {$blog_prefix}local_ledger
@@ -240,6 +265,8 @@ class TGS_HTSOFT_Reconciliation {
                 'items_with_diff' => count(array_filter($comparison, function($item) {
                     return abs($item['diff']) > 0.01;
                 })),
+                'orders_count' => intval($orders_count),
+                'revenue' => floatval($revenue),
                 'sales_notes' => $sales_notes,
             ));
 

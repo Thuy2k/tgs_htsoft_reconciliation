@@ -508,14 +508,20 @@ jQuery(document).ready(function($) {
         if (!ws['!merges']) ws['!merges'] = [];
         ws['!merges'].push({ s: { r: 0, c: 0 }, e: { r: 0, c: 5 } });
 
-        // Row 2-5: Thông tin meta - nền xám nhạt, merge cột B-F cho value
-        for (let r = 1; r <= 4; r++) {
+        // Row 2-7: Thông tin meta - nền xám nhạt, merge cột B-F cho value
+        for (let r = 1; r <= 6; r++) {
             for (let c = 0; c < 6; c++) {
                 const cell = XLSX.utils.encode_cell({ r, c });
                 if (!ws[cell]) ws[cell] = { v: '', t: 's' };
+
+                // Highlight Số đơn (row 5 = r=4) và Doanh thu (row 6 = r=5)
+                let isHighlight = (r === 4 || r === 5);
+
                 ws[cell].s = {
-                    font: c === 0 ? { bold: true, color: { rgb: '1F4E79' }, sz: 11 } : { color: { rgb: '333333' }, sz: 11 },
-                    fill: { fgColor: { rgb: 'F2F7FC' } },
+                    font: c === 0
+                        ? { bold: true, color: { rgb: isHighlight ? 'C00000' : '1F4E79' }, sz: isHighlight ? 12 : 11 }
+                        : { color: { rgb: isHighlight ? 'C00000' : '333333' }, sz: isHighlight ? 12 : 11, bold: isHighlight },
+                    fill: { fgColor: { rgb: isHighlight ? 'FFEB9C' : 'F2F7FC' } },
                     alignment: { vertical: 'center' },
                     border: borderThin
                 };
@@ -705,6 +711,8 @@ jQuery(document).ready(function($) {
             ['Website:', data.site_name || `Mã ${siteCode}`],
             ['Mã kho:', siteCode],
             ['Ngày xuất:', new Date().toLocaleString('vi-VN')],
+            ['Số đơn hôm nay:', data.orders_count || 0],
+            ['Doanh thu hôm nay:', (data.revenue || 0).toLocaleString('vi-VN') + ' đ'],
             ['Tổng SP chênh lệch:', diffItems.length],
             [],
             ['STT', 'Mã hàng', 'Tên sản phẩm', 'Tồn HTSOFT', 'Tồn hệ thống', 'Chênh lệch']
@@ -739,8 +747,8 @@ jQuery(document).ready(function($) {
         // Chiều cao hàng tiêu đề
         ws['!rows'] = [{ hpt: 28 }];
 
-        // Style phần báo cáo chính
-        styleMainReport(ws, diffItems, 6);
+        // Style phần báo cáo chính (header ở row 9 = index 8)
+        styleMainReport(ws, diffItems, 8);
 
         // Thêm khối ghi chú bên phải
         if (data.sales_notes && data.sales_notes.length > 0) {

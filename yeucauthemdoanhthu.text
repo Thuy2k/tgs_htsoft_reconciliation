@@ -1,0 +1,6 @@
+À sếp t cho phép ở mỗi tab, có thêm tổng đơn hàng, và tổng doanh thu nhé. 
+Thì trong bảng wp_local_ledger (wp_ là tiền tố multisite của mỗi webiste)
+bạn query các phiếu bán hàng và doanh thu mà có cột created_at là ngày hôm nay
+để lấy tổng đơn bán hàng thì bạn dựa vào cột local_ledger_type là 10 (tức là các phiếu bán hàng) và cột local_ledger_approver_status là 1 (đã duyệt), is_deleted là 0 hoặc null đều ok. (thì đấy là số đơn)
+còn các đơn doanh thu bạn lấy ở bản ghi có cột local_ledger_type là 7 , và cột local_ledger_approver_status là 1, is_deleted là 0 hoặc null đều ok, local_ledger_total_amount là tiền thu của phiếu thu đó, còn muốn tính tổng thì cứ lấy các bản ghi phiếu thu của ngày hôm nay cộng lại các cột này là ra doanh thu. 
+Bạn nên nhớ t đang nói là cho website multisite đấy nhé. khi bạn xuất exel tổng, hay tab đều lấy thêm thống kê này cho trực quan nhé. bạn làm đẹp dễ nhìn thì càng tốt.
