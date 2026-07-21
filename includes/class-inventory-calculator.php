@@ -55,6 +55,7 @@ class TGS_HTSOFT_Inventory_Calculator {
                     CASE
                         WHEN li.local_ledger_item_type = 1 THEN li.quantity  -- Nhập: cộng
                         WHEN li.local_ledger_item_type = 2 THEN -li.quantity -- Xuất: trừ
+                        WHEN li.local_ledger_item_type = 3 THEN li.quantity  -- Hoàn hàng: cộng
                         WHEN li.local_ledger_item_type = 21 THEN li.quantity -- Điều chỉnh: +/- tùy giá trị
                         ELSE 0
                     END
@@ -63,7 +64,7 @@ class TGS_HTSOFT_Inventory_Calculator {
             INNER JOIN {$prefix}local_ledger l ON li.local_ledger_id = l.local_ledger_id
             WHERE li.local_product_sku IN ({$placeholders})
                 AND l.local_ledger_approver_status = 1
-                AND li.local_ledger_item_type IN (1, 2, 21)
+                AND li.local_ledger_item_type IN (1, 2, 3, 21)
             GROUP BY li.local_product_sku
         ";
 
