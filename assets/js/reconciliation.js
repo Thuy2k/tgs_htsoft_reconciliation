@@ -784,6 +784,250 @@ jQuery(document).ready(function($) {
         showAlert('success', `Đã xuất ${diffItems.length} sản phẩm ra Excel`);
     };
 
+    // Auto balance all websites
+    window.autoBalanceAll = async function() {
+        const allSiteCodes = Object.keys(window.tabItemsCache || {});
+
+        if (allSiteCodes.length === 0) {
+            showAlert('warning', 'Không có dữ liệu để xử lý');
+            return;
+        }
+
+        if (!confirm(`Bạn có chắc muốn tự động cân hàng cho tất cả ${allSiteCodes.length} website?\n\nHệ thống sẽ tự động:\n1. Chọn tất cả sản phẩm chênh lệch\n2. Tạo phiếu điều chỉnh cho từng website\n\nQuá trình này có thể mất vài phút.`)) {
+            return;
+        }
+
+        $('#autoBalanceAllBtn').prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span>Đang xử lý...');
+
+        let processedCount = 0;
+        let successCount = 0;
+        let failedCount = 0;
+        let totalItems = 0;
+        const results = [];
+
+        showAlert('info', `Bắt đầu xử lý ${allSiteCodes.length} website...`);
+
+        for (const siteCode of allSiteCodes) {
+            processedCount++;
+
+            // Update progress
+            $('#autoBalanceAllBtn').html(`<span class="spinner-border spinner-border-sm me-1"></span>Đang xử lý ${processedCount}/${allSiteCodes.length}...`);
+
+            try {
+                // Load data nếu chưa có
+                if (!currentSiteData[siteCode]) {
+                    const items = window.tabItemsCache[siteCode];
+                    await new Promise((resolve, reject) => {
+                        $.ajax({
+                            url: ajaxUrl,
+                            method: 'POST',
+                            data: {
+                                action: 'tgs_htsoft_get_tab_data',
+                                nonce: nonce,
+                                site_code: siteCode,
+                                excel_items: JSON.stringify(items)
+                            },
+                            success: function(response) {
+                                if (response.success) {
+                                    currentSiteData[siteCode] = response.data;
+                                    resolve();
+                                } else {
+                                    reject(response.data.message || 'Lỗi tải dữ liệu');
+                                }
+                            },
+                            error: function() {
+                                reject('Lỗi kết nối server');
+                            }
+                        });
+                    });
+                }
+
+                const data = currentSiteData[siteCode];
+
+                // Lọc items có chênh lệch
+                const diffItems = data.comparison.filter(item => Math.abs(item.diff) > 0.01);
+
+                if (diffItems.length === 0) {
+                    results.push({
+                        siteCode: siteCode,
+                        siteName: data.site_name || siteCode,
+                        status: 'skip',
+                        message: 'Không có chênh lệch',
+                        itemCount: 0
+                    });
+                    continue;
+                }
+
+                // Tạo phiếu điều chỉnh
+                const adjustmentItems = diffItems.map(item => ({
+                    sku: item.sku,
+                    product_name: item.global_product_name || item.product_name,
+                    system_qty: item.system_qty,
+                    excel_qty: item.excel_qty,
+                    diff: item.diff
+                }));
+
+                const result = await new Promise((resolve, reject) => {
+                    $.ajax({
+                        url: ajaxUrl,
+                        method: 'POST',
+                        data: {
+                            action: 'tgs_htsoft_create_adjustment',
+                            nonce: nonce,
+                            blog_id: data.blog_id,
+                            items: JSON.stringify(adjustmentItems),
+                            note: `Tự động cân hàng - Đối chiếu HTSOFT ${new Date().toLocaleString('vi-VN')}`
+                        },
+                        success: function(response) {
+                            if (response.success) {
+                                resolve(response.data);
+                            } else {
+                                reject(response.data.message || 'Lỗi tạo phiếu');
+                            }
+                        },
+                        error: function() {
+                            reject('Lỗi kết nối server');
+                        }
+                    });
+                });
+
+                successCount++;
+                totalItems += diffItems.length;
+                results.push({
+                    siteCode: siteCode,
+                    siteName: data.site_name || siteCode,
+                    status: 'success',
+                    message: 'Tạo phiếu thành công',
+                    itemCount: diffItems.length,
+                    ledgerId: result.ledger_id,
+                    detailUrl: result.detail_url
+                });
+
+                // Clear cache để reload sau
+                delete currentSiteData[siteCode];
+
+            } catch (error) {
+                failedCount++;
+                results.push({
+                    siteCode: siteCode,
+                    siteName: currentSiteData[siteCode]?.site_name || siteCode,
+                    status: 'error',
+                    message: error,
+                    itemCount: 0
+                });
+            }
+
+            // Delay nhỏ giữa các request để tránh quá tải
+            await new Promise(resolve => setTimeout(resolve, 300));
+        }
+
+        // Hiển thị kết quả
+        showAutoBalanceResults(results, successCount, failedCount, totalItems);
+
+        $('#autoBalanceAllBtn').prop('disabled', false).html('<i class="bx bx-bot me-1"></i>Tự cân hàng tất cả');
+
+        // Reload lại UI sau khi hoàn thành
+        if (successCount > 0) {
+            setTimeout(() => {
+                location.reload();
+            }, 5000);
+        }
+    };
+
+    // Hiển thị kết quả tự động cân hàng
+    function showAutoBalanceResults(results, successCount, failedCount, totalItems) {
+        const resultHtml = `
+            <div class="modal fade" id="autoBalanceResultModal" tabindex="-1">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header ${successCount > 0 && failedCount === 0 ? 'bg-success text-white' : (failedCount > 0 ? 'bg-warning' : 'bg-info text-white')}">
+                            <h5 class="modal-title">
+                                <i class="bx bx-check-circle me-2"></i>Kết quả tự động cân hàng
+                            </h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="alert alert-info mb-3">
+                                <h6 class="mb-2">Tổng kết:</h6>
+                                <ul class="mb-0">
+                                    <li>Đã xử lý: <strong>${results.length} website</strong></li>
+                                    <li>Thành công: <strong class="text-success">${successCount} website</strong> (${totalItems} sản phẩm)</li>
+                                    ${failedCount > 0 ? `<li>Lỗi: <strong class="text-danger">${failedCount} website</strong></li>` : ''}
+                                    <li>Bỏ qua: <strong>${results.filter(r => r.status === 'skip').length} website</strong> (không có chênh lệch)</li>
+                                </ul>
+                            </div>
+
+                            <div class="table-responsive" style="max-height: 400px;">
+                                <table class="table table-sm table-hover">
+                                    <thead class="table-light sticky-top">
+                                        <tr>
+                                            <th style="width: 50px">STT</th>
+                                            <th style="width: 100px">Mã kho</th>
+                                            <th>Website</th>
+                                            <th class="text-center" style="width: 80px">SP điều chỉnh</th>
+                                            <th style="width: 100px">Trạng thái</th>
+                                            <th style="width: 80px">Chi tiết</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${results.map((result, idx) => {
+                                            let statusBadge = '';
+                                            let actionBtn = '';
+
+                                            if (result.status === 'success') {
+                                                statusBadge = '<span class="badge bg-success">Thành công</span>';
+                                                actionBtn = `<a href="${result.detailUrl}" target="_blank" class="btn btn-sm btn-outline-primary"><i class="bx bx-link-external"></i></a>`;
+                                            } else if (result.status === 'skip') {
+                                                statusBadge = '<span class="badge bg-secondary">Bỏ qua</span>';
+                                                actionBtn = '<span class="text-muted">—</span>';
+                                            } else {
+                                                statusBadge = '<span class="badge bg-danger">Lỗi</span>';
+                                                actionBtn = `<span class="text-danger" title="${result.message}"><i class="bx bx-error-circle"></i></span>`;
+                                            }
+
+                                            return `
+                                                <tr>
+                                                    <td>${idx + 1}</td>
+                                                    <td><code>${result.siteCode}</code></td>
+                                                    <td>${result.siteName}</td>
+                                                    <td class="text-center">${result.itemCount > 0 ? result.itemCount : '—'}</td>
+                                                    <td>${statusBadge}</td>
+                                                    <td class="text-center">${actionBtn}</td>
+                                                </tr>
+                                            `;
+                                        }).join('')}
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            ${successCount > 0 ? '<div class="alert alert-success mt-3 mb-0"><i class="bx bx-info-circle me-2"></i>Trang sẽ tự động tải lại sau 5 giây...</div>' : ''}
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // Remove old modal if exists
+        $('#autoBalanceResultModal').remove();
+
+        // Append and show
+        $('body').append(resultHtml);
+        const modal = new bootstrap.Modal(document.getElementById('autoBalanceResultModal'));
+        modal.show();
+
+        // Show summary alert
+        if (successCount > 0 && failedCount === 0) {
+            showAlert('success', `Đã cân hàng thành công ${successCount} website với ${totalItems} sản phẩm!`);
+        } else if (successCount > 0 && failedCount > 0) {
+            showAlert('warning', `Hoàn thành ${successCount}/${results.length} website. Có ${failedCount} website lỗi.`);
+        } else {
+            showAlert('info', 'Không có website nào cần cân hàng.');
+        }
+    }
+
     // Export all tabs to Excel
     window.exportAllToExcel = async function() {
         const allSiteCodes = Object.keys(window.tabItemsCache || {});

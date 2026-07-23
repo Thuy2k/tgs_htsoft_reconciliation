@@ -57,6 +57,9 @@ if (!defined('ABSPATH')) {
             <span class="badge bg-primary ms-2" id="totalSitesBadge">0 website</span>
         </h5>
         <div class="d-flex gap-2">
+            <button type="button" class="btn btn-sm btn-warning" id="autoBalanceAllBtn" onclick="autoBalanceAll()">
+                <i class="bx bx-bot me-1"></i>Tự cân hàng tất cả
+            </button>
             <button type="button" class="btn btn-sm btn-success" id="exportAllBtn" onclick="exportAllToExcel()">
                 <i class="bx bx-download me-1"></i>Xuất Excel tất cả
             </button>
