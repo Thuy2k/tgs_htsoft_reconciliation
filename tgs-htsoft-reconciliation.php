@@ -95,11 +95,18 @@ class TGS_HTSOFT_Reconciliation {
             true
         );
 
+        // Dùng filemtime làm version: TGS_HTSOFT_RECON_VERSION là hằng số cứng
+        // '1.0.0' nên sửa file js/css xong trình duyệt vẫn nạp bản cache cũ.
+        $js_path = plugin_dir_path(__FILE__) . 'assets/js/reconciliation.js';
+        $css_path = plugin_dir_path(__FILE__) . 'assets/css/reconciliation.css';
+        $js_ver = file_exists($js_path) ? filemtime($js_path) : TGS_HTSOFT_RECON_VERSION;
+        $css_ver = file_exists($css_path) ? filemtime($css_path) : TGS_HTSOFT_RECON_VERSION;
+
         wp_enqueue_script(
             'tgs-htsoft-recon',
             plugin_dir_url(__FILE__) . 'assets/js/reconciliation.js',
             array('jquery', 'sheetjs'),
-            TGS_HTSOFT_RECON_VERSION,
+            $js_ver,
             true
         );
 
@@ -107,7 +114,7 @@ class TGS_HTSOFT_Reconciliation {
             'tgs-htsoft-recon',
             plugin_dir_url(__FILE__) . 'assets/css/reconciliation.css',
             array(),
-            TGS_HTSOFT_RECON_VERSION
+            $css_ver
         );
 
         wp_localize_script('tgs-htsoft-recon', 'tgsHtsoftRecon', array(
