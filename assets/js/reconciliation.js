@@ -486,6 +486,15 @@ jQuery(document).ready(function($) {
         }, 5000);
     }
 
+    // Chỉ số dòng (0-based) của khối thông tin đầu sheet.
+    // 0 tiêu đề | 1 Website | 2 Mã kho | 3 Ngày xuất | 4 Số đơn | 5 Doanh thu
+    // 6 Doanh thu hoàn lại | 7 DOANH THU CUỐI CÙNG | 8 Tổng SP chênh lệch
+    const ROW_ORDERS = 4;
+    const ROW_REVENUE = 5;
+    const ROW_REFUND = 6;
+    const ROW_NET_REVENUE = 7;
+    const META_ROWS_END = 8;
+
     // Helper: Style cho phần báo cáo chính (bên trái)
     function styleMainReport(ws, diffItems, headerRowIdx) {
         const borderThin = {
@@ -508,20 +517,49 @@ jQuery(document).ready(function($) {
         if (!ws['!merges']) ws['!merges'] = [];
         ws['!merges'].push({ s: { r: 0, c: 0 }, e: { r: 0, c: 5 } });
 
-        // Row 2-7: Thông tin meta - nền xám nhạt, merge cột B-F cho value
-        for (let r = 1; r <= 6; r++) {
+        // Khối thông tin đầu sheet - merge cột B-F cho value.
+        // Ba dòng tiền được tô màu theo dòng tiền để nhìn phát hiểu ngay:
+        // vàng = thu vào, đỏ = chi ra, xanh = còn lại.
+        for (let r = 1; r <= META_ROWS_END; r++) {
+            const isMoneyIn = (r === ROW_ORDERS || r === ROW_REVENUE);
+            const isRefund = (r === ROW_REFUND);
+            const isNet = (r === ROW_NET_REVENUE);
+
+            let bgColor = 'F2F7FC';
+            let textColor = '333333';
+            let labelColor = '1F4E79';
+            let fontSize = 11;
+            let isBold = false;
+
+            if (isMoneyIn) {
+                bgColor = 'FFEB9C';
+                textColor = 'C00000';
+                labelColor = 'C00000';
+                fontSize = 12;
+                isBold = true;
+            } else if (isRefund) {
+                bgColor = 'FFC7CE';
+                textColor = '9C0006';
+                labelColor = '9C0006';
+                fontSize = 12;
+                isBold = true;
+            } else if (isNet) {
+                bgColor = 'C6EFCE';
+                textColor = '006100';
+                labelColor = '006100';
+                fontSize = 13;
+                isBold = true;
+            }
+
             for (let c = 0; c < 6; c++) {
                 const cell = XLSX.utils.encode_cell({ r, c });
                 if (!ws[cell]) ws[cell] = { v: '', t: 's' };
 
-                // Highlight Số đơn (row 5 = r=4) và Doanh thu (row 6 = r=5)
-                let isHighlight = (r === 4 || r === 5);
-
                 ws[cell].s = {
                     font: c === 0
-                        ? { bold: true, color: { rgb: isHighlight ? 'C00000' : '1F4E79' }, sz: isHighlight ? 12 : 11 }
-                        : { color: { rgb: isHighlight ? 'C00000' : '333333' }, sz: isHighlight ? 12 : 11, bold: isHighlight },
-                    fill: { fgColor: { rgb: isHighlight ? 'FFEB9C' : 'F2F7FC' } },
+                        ? { bold: true, color: { rgb: labelColor }, sz: fontSize }
+                        : { bold: isBold, color: { rgb: textColor }, sz: fontSize },
+                    fill: { fgColor: { rgb: bgColor } },
                     alignment: { vertical: 'center' },
                     border: borderThin
                 };
@@ -529,6 +567,10 @@ jQuery(document).ready(function($) {
             // Merge cột B-F (index 1-5) cho mỗi dòng meta
             ws['!merges'].push({ s: { r, c: 1 }, e: { r, c: 5 } });
         }
+
+        // Dòng doanh thu cuối cùng cao hơn cho nổi bật
+        if (!ws['!rows']) ws['!rows'] = [];
+        ws['!rows'][ROW_NET_REVENUE] = { hpt: 22 };
 
         // Row header bảng (row 7 = index 6) - nền teal đậm
         for (let c = 0; c < 6; c++) {
@@ -704,6 +746,15 @@ jQuery(document).ready(function($) {
         ws['!ref'] = XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: maxRow, c: maxCol } });
     }
 
+    // Doanh thu cuối cùng = phiếu thu - phiếu chi hoàn khách.
+    // Backend đã tính sẵn, tự tính lại phòng khi bản cũ chưa trả net_revenue.
+    function netRevenueOf(data) {
+        if (data && data.net_revenue != null) {
+            return data.net_revenue;
+        }
+        return Math.max(0, (data?.revenue || 0) - (data?.refund_amount || 0));
+    }
+
     // Helper: Tạo sheet đã styled hoàn chỉnh
     function buildStyledSheet(data, siteCode, diffItems) {
         const wsData = [
@@ -713,6 +764,8 @@ jQuery(document).ready(function($) {
             ['Ngày xuất:', new Date().toLocaleString('vi-VN')],
             ['Số đơn hôm nay:', data.orders_count || 0],
             ['Doanh thu hôm nay:', (data.revenue || 0).toLocaleString('vi-VN') + ' đ'],
+            ['Doanh thu hoàn lại:', '- ' + (data.refund_amount || 0).toLocaleString('vi-VN') + ' đ'],
+            ['DOANH THU CUỐI CÙNG:', (netRevenueOf(data)).toLocaleString('vi-VN') + ' đ'],
             ['Tổng SP chênh lệch:', diffItems.length],
             [],
             ['STT', 'Mã hàng', 'Tên sản phẩm', 'Tồn HTSOFT', 'Tồn hệ thống', 'Chênh lệch']
@@ -747,8 +800,8 @@ jQuery(document).ready(function($) {
         // Chiều cao hàng tiêu đề
         ws['!rows'] = [{ hpt: 28 }];
 
-        // Style phần báo cáo chính (header ở row 9 = index 8)
-        styleMainReport(ws, diffItems, 8);
+        // Style phần báo cáo chính (header ở row 11 = index 10)
+        styleMainReport(ws, diffItems, META_ROWS_END + 2);
 
         // Thêm khối ghi chú bên phải
         if (data.sales_notes && data.sales_notes.length > 0) {

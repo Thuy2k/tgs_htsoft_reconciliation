@@ -233,6 +233,20 @@ class TGS_HTSOFT_Reconciliation {
                 $today_end
             ));
 
+            // Tiền hoàn lại khách (phiếu chi type = 8) — đối xứng với phiếu thu
+            // type = 7. Phiếu chi được sinh ra khi hoàn hàng, lọc theo created_at
+            // tức thời điểm bấm tạo phiếu.
+            $refund_amount = $wpdb->get_var($wpdb->prepare(
+                "SELECT SUM(local_ledger_total_amount)
+                 FROM {$blog_prefix}local_ledger
+                 WHERE local_ledger_type = 8
+                 AND local_ledger_approver_status = 1
+                 AND (is_deleted = 0 OR is_deleted IS NULL)
+                 AND created_at BETWEEN %s AND %s",
+                $today_start,
+                $today_end
+            ));
+
             // Ghi chú phiếu bán hàng
             $sales_notes = array();
             $notes_results = $wpdb->get_results($wpdb->prepare(
@@ -267,6 +281,8 @@ class TGS_HTSOFT_Reconciliation {
                 })),
                 'orders_count' => intval($orders_count),
                 'revenue' => floatval($revenue),
+                'refund_amount' => floatval($refund_amount),
+                'net_revenue' => max(0, floatval($revenue) - floatval($refund_amount)),
                 'sales_notes' => $sales_notes,
             ));
 
