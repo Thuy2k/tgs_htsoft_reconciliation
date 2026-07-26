@@ -764,7 +764,9 @@ jQuery(document).ready(function($) {
             ['Ngày xuất:', new Date().toLocaleString('vi-VN')],
             ['Số đơn hôm nay:', data.orders_count || 0],
             ['Doanh thu hôm nay:', (data.revenue || 0).toLocaleString('vi-VN') + ' đ'],
-            ['Doanh thu hoàn lại:', '- ' + (data.refund_amount || 0).toLocaleString('vi-VN') + ' đ'],
+            // Chỉ gắn dấu trừ khi thực sự có hoàn, tránh hiện "- 0 đ" khó đọc.
+            ['Doanh thu hoàn lại:', ((data.refund_amount || 0) > 0 ? '- ' : '')
+                + (data.refund_amount || 0).toLocaleString('vi-VN') + ' đ'],
             ['DOANH THU CUỐI CÙNG:', (netRevenueOf(data)).toLocaleString('vi-VN') + ' đ'],
             ['Tổng SP chênh lệch:', diffItems.length],
             [],
