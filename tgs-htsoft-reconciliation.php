@@ -71,6 +71,10 @@ class TGS_HTSOFT_Reconciliation {
         require_once TGS_HTSOFT_RECON_PLUGIN_DIR . 'includes/class-excel-parser.php';
         require_once TGS_HTSOFT_RECON_PLUGIN_DIR . 'includes/class-inventory-calculator.php';
         require_once TGS_HTSOFT_RECON_PLUGIN_DIR . 'includes/class-adjustment-creator.php';
+
+        // LUỒNG RIÊNG: khảo sát feedback shop (asset + AJAX + modal tự đăng ký).
+        require_once TGS_HTSOFT_RECON_PLUGIN_DIR . 'includes/class-feedback-module.php';
+        TGS_HTSOFT_Feedback_Module::init();
     }
 
     // XÓA FUNCTION NÀY - không cần nữa

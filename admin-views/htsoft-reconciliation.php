@@ -9,12 +9,19 @@ if (!defined('ABSPATH')) {
 }
 ?>
 
-<div class="tgs-page-header">
-    <h1 class="page-title">
-        <i class="bx bx-git-compare me-2"></i>
-        Đối chiếu tồn kho HTSOFT
-    </h1>
-    <p class="text-muted">Upload file Excel từ HTSOFT để đối chiếu và tạo phiếu điều chỉnh tự động theo từng website</p>
+<div class="tgs-page-header d-flex justify-content-between align-items-start flex-wrap gap-2">
+    <div>
+        <h1 class="page-title">
+            <i class="bx bx-git-compare me-2"></i>
+            Đối chiếu tồn kho HTSOFT
+        </h1>
+        <p class="text-muted mb-0">Upload file Excel từ HTSOFT để đối chiếu và tạo phiếu điều chỉnh tự động theo từng website</p>
+    </div>
+    <!-- LUỒNG RIÊNG: dùng được ngay, không cần upload file đối chiếu -->
+    <button type="button" class="btn btn-outline-primary tgs-fb-open-btn"
+            title="Tạo file Excel khảo sát feedback cho tất cả shop (mỗi shop 1 tab riêng)">
+        <i class="bx bx-message-square-detail me-1"></i>Xuất Excel feedback shop
+    </button>
 </div>
 
 <!-- Alert area -->
@@ -62,6 +69,11 @@ if (!defined('ABSPATH')) {
             </button>
             <button type="button" class="btn btn-sm btn-success" id="exportAllBtn" onclick="exportAllToExcel()">
                 <i class="bx bx-download me-1"></i>Xuất Excel tất cả
+            </button>
+            <!-- LUỒNG RIÊNG: khảo sát feedback shop, không liên quan dữ liệu chênh lệch -->
+            <button type="button" class="btn btn-sm btn-primary tgs-fb-open-btn"
+                    title="Tạo file Excel khảo sát feedback cho tất cả shop (mỗi shop 1 tab riêng)">
+                <i class="bx bx-message-square-detail me-1"></i>Xuất Excel feedback shop
             </button>
             <button type="button" class="btn btn-sm btn-outline-secondary" onclick="location.reload()">
                 <i class="bx bx-refresh me-1"></i>Upload file mới

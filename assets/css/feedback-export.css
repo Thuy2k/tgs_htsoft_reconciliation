@@ -1,0 +1,77 @@
+/**
+ * LUỒNG RIÊNG - Khảo sát feedback shop.
+ * CSS tách riêng để không đụng vào reconciliation.css.
+ */
+
+.tgs-fb-modal-header {
+    background: linear-gradient(135deg, #7b2d8b 0%, #2e75b6 100%);
+    color: #fff;
+}
+
+.tgs-fb-modal-header .modal-title {
+    color: #fff;
+    font-weight: 600;
+}
+
+.tgs-fb-shop-list {
+    max-height: 320px;
+    overflow-y: auto;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    background: #fff;
+}
+
+.tgs-fb-shop-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    border-bottom: 1px solid #f0f2f5;
+    cursor: pointer;
+    transition: background .15s ease;
+}
+
+.tgs-fb-shop-item:last-child {
+    border-bottom: none;
+}
+
+.tgs-fb-shop-item:hover {
+    background: #f5f9fd;
+}
+
+.tgs-fb-shop-item.is-hidden {
+    display: none;
+}
+
+.tgs-fb-shop-code {
+    display: inline-block;
+    min-width: 62px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    background: #e8f0fa;
+    color: #1f4e79;
+    font-weight: 700;
+    font-size: .82rem;
+    text-align: center;
+}
+
+.tgs-fb-shop-name {
+    flex: 1;
+    font-size: .9rem;
+    color: #333;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.tgs-fb-empty {
+    padding: 24px;
+    text-align: center;
+    color: #6c757d;
+    font-size: .9rem;
+}
+
+/* Nút mở khảo sát - dùng ở cả header trang và cạnh nút Xuất Excel tất cả */
+.tgs-fb-open-btn {
+    white-space: nowrap;
+}
