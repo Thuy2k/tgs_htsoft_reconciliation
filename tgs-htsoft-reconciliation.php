@@ -75,6 +75,16 @@ class TGS_HTSOFT_Reconciliation {
         // LUỒNG RIÊNG: khảo sát feedback shop (asset + AJAX + modal tự đăng ký).
         require_once TGS_HTSOFT_RECON_PLUGIN_DIR . 'includes/class-feedback-module.php';
         TGS_HTSOFT_Feedback_Module::init();
+
+        // LUỒNG RIÊNG: lưu vết phiên đối chiếu + trang báo cáo cho toàn bộ shop.
+        require_once TGS_HTSOFT_RECON_PLUGIN_DIR . 'includes/class-snapshot-db.php';
+        require_once TGS_HTSOFT_RECON_PLUGIN_DIR . 'includes/class-snapshot-store.php';
+        require_once TGS_HTSOFT_RECON_PLUGIN_DIR . 'includes/class-snapshot-module.php';
+        TGS_HTSOFT_Snapshot_Module::init();
+
+        // LUỒNG RIÊNG: cấu hình chặn bán hàng (tgs_pos đọc qua option mạng).
+        require_once TGS_HTSOFT_RECON_PLUGIN_DIR . 'includes/class-gate-config.php';
+        TGS_HTSOFT_Gate_Config::init();
     }
 
     // XÓA FUNCTION NÀY - không cần nữa

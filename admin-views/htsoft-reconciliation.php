@@ -17,11 +17,18 @@ if (!defined('ABSPATH')) {
         </h1>
         <p class="text-muted mb-0">Upload file Excel từ HTSOFT để đối chiếu và tạo phiếu điều chỉnh tự động theo từng website</p>
     </div>
-    <!-- LUỒNG RIÊNG: dùng được ngay, không cần upload file đối chiếu -->
-    <button type="button" class="btn btn-outline-primary tgs-fb-open-btn"
-            title="Tạo file Excel khảo sát feedback cho tất cả shop (mỗi shop 1 tab riêng)">
-        <i class="bx bx-message-square-detail me-1"></i>Xuất Excel feedback shop
-    </button>
+    <div class="d-flex gap-2 flex-wrap">
+        <!-- Bật/tắt việc chặn bán hàng, theo từng shop hoặc toàn hệ thống -->
+        <button type="button" class="btn btn-outline-danger tgs-gate-config-btn"
+                title="Bật/tắt chặn bán hàng khi shop chưa giải trình chênh lệch">
+            <i class="bx bx-shield-quarter me-1"></i>Cấu hình chặn bán hàng
+        </button>
+        <!-- LUỒNG RIÊNG: dùng được ngay, không cần upload file đối chiếu -->
+        <button type="button" class="btn btn-outline-primary tgs-fb-open-btn"
+                title="Tạo file Excel khảo sát feedback cho tất cả shop (mỗi shop 1 tab riêng)">
+            <i class="bx bx-message-square-detail me-1"></i>Xuất Excel feedback shop
+        </button>
+    </div>
 </div>
 
 <!-- Alert area -->
@@ -64,6 +71,11 @@ if (!defined('ABSPATH')) {
             <span class="badge bg-primary ms-2" id="totalSitesBadge">0 website</span>
         </h5>
         <div class="d-flex gap-2">
+            <!-- LƯU VẾT: chụp lại số của cả 2 phần mềm tại đúng khung giờ này -->
+            <button type="button" class="btn btn-sm btn-primary" id="hcrSaveSnapshotBtn"
+                    title="Lưu lại phiên đối chiếu này để shop và cấp trên vào xem, ghi chú giải thích">
+                <i class="bx bx-save me-1"></i>Lưu phiên đối chiếu
+            </button>
             <button type="button" class="btn btn-sm btn-warning" id="autoBalanceAllBtn" onclick="autoBalanceAll()">
                 <i class="bx bx-bot me-1"></i>Tự cân hàng tất cả
             </button>

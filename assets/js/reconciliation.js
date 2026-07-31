@@ -6,6 +6,10 @@ jQuery(document).ready(function($) {
     let currentSiteData = {};
     let selectedItems = [];
 
+    // Module "Lưu phiên đối chiếu" (snapshot-save.js) nằm ngoài closure này nên
+    // cần tham chiếu tới cùng object dữ liệu đã tải, tránh gọi lại AJAX từ đầu.
+    window.tgsHtsoftSiteData = currentSiteData;
+
     // Handle file upload
     $('#htsoftExcelFile').on('change', function(e) {
         const file = e.target.files[0];
