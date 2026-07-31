@@ -48,15 +48,19 @@ class TGS_HTSOFT_Inventory_Calculator {
 
         // Query lấy tồn từ ledger_item
         // Chỉ lấy phiếu đã duyệt (local_ledger_approver_status = 1)
+        // Giữ khớp với TGS_Inventory_Helper của tgs_shop_management: dùng ABS cho
+        // nhập/xuất/hoàn, và loại bỏ phiếu lẫn dòng đã xoá mềm. Thiếu điều kiện
+        // is_deleted thì phiếu đã xoá vẫn được cộng vào tồn, làm báo cáo đối chiếu
+        // báo lệch trong khi trang tồn kho của shop lại thấy khớp.
         $query = "
             SELECT
                 li.local_product_sku,
                 SUM(
                     CASE
-                        WHEN li.local_ledger_item_type = 1 THEN li.quantity  -- Nhập: cộng
-                        WHEN li.local_ledger_item_type = 2 THEN -li.quantity -- Xuất: trừ
-                        WHEN li.local_ledger_item_type = 3 THEN li.quantity  -- Hoàn hàng: cộng
-                        WHEN li.local_ledger_item_type = 21 THEN li.quantity -- Điều chỉnh: +/- tùy giá trị
+                        WHEN li.local_ledger_item_type = 1 THEN ABS(li.quantity)   -- Nhập: cộng
+                        WHEN li.local_ledger_item_type = 2 THEN -ABS(li.quantity)  -- Xuất: trừ
+                        WHEN li.local_ledger_item_type = 3 THEN ABS(li.quantity)   -- Hoàn hàng: cộng
+                        WHEN li.local_ledger_item_type = 21 THEN li.quantity        -- Điều chỉnh: +/- theo dấu
                         ELSE 0
                     END
                 ) as total_quantity
@@ -65,6 +69,8 @@ class TGS_HTSOFT_Inventory_Calculator {
             WHERE li.local_product_sku IN ({$placeholders})
                 AND l.local_ledger_approver_status = 1
                 AND li.local_ledger_item_type IN (1, 2, 3, 21)
+                AND (li.is_deleted = 0 OR li.is_deleted IS NULL)
+                AND (l.is_deleted = 0 OR l.is_deleted IS NULL)
             GROUP BY li.local_product_sku
         ";
 
