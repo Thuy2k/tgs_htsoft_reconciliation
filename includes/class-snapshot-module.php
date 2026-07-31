@@ -578,10 +578,30 @@ class TGS_HTSOFT_Snapshot_Module {
                 $snapshot->snapshot_id
             ));
 
+            // Shop nào đã tự cân hàng ở POS cho đúng phiên này.
+            $settled = array();
+            $clearance_table = self::clearance_table();
+            if ($clearance_table !== '') {
+                $cleared_rows = $wpdb->get_results($wpdb->prepare(
+                    "SELECT blog_id, method, ledger_code, cleared_at, cleared_by_name
+                     FROM {$clearance_table} WHERE snapshot_code = %s",
+                    $snapshot->snapshot_code
+                ));
+                foreach ((array) $cleared_rows as $c) {
+                    $settled[intval($c->blog_id)] = array(
+                        'method'      => $c->method,
+                        'ledger_code' => $c->ledger_code,
+                        'at'          => $c->cleared_at,
+                        'by'          => $c->cleared_by_name,
+                    );
+                }
+            }
+
             $sites = array();
             $covered = array();
             foreach ((array) $rows as $row) {
                 $covered[$row->site_code] = true;
+                $blog_id = intval($row->blog_id);
                 $sites[] = array(
                     'site_code'      => $row->site_code,
                     'site_name'      => $row->site_name,
@@ -596,6 +616,7 @@ class TGS_HTSOFT_Snapshot_Module {
                     'net_revenue'    => floatval($row->net_revenue),
                     'has_activity'   => intval($row->has_activity),
                     'note_count'     => intval($row->note_count),
+                    'settled'        => isset($settled[$blog_id]) ? $settled[$blog_id] : null,
                 );
             }
 
@@ -696,6 +717,8 @@ class TGS_HTSOFT_Snapshot_Module {
                 'sales_notes' => isset($detail['sales_notes']) ? $detail['sales_notes'] : array(),
                 'site_note'   => $site_note,
                 'item_notes'  => $item_notes,
+                // Giải trình shop đã khai tại POS lúc bấm cân hàng (chỉ đọc).
+                'clearance'   => self::get_pos_clearance(intval($site_row->blog_id), $snapshot->snapshot_code),
             ));
         } catch (Exception $e) {
             wp_send_json_error(array('message' => $e->getMessage()));
@@ -915,6 +938,70 @@ class TGS_HTSOFT_Snapshot_Module {
     /* ---------------------------------------------------------------------
      * Helper
      * ------------------------------------------------------------------ */
+
+    /**
+     * Bảng lưu dấu "shop đã tự cân hàng ở POS" do plugin tgs_pos tạo.
+     * Đọc thẳng bảng global, không gọi class của tgs_pos; tgs_pos chưa kích hoạt
+     * thì bảng không tồn tại và mọi thứ ở đây lặng lẽ bỏ qua.
+     */
+    private static function clearance_table() {
+        global $wpdb;
+
+        static $exists = null;
+        $table = $wpdb->base_prefix . 'tgs_pos_recon_clearance';
+
+        if ($exists === null) {
+            $exists = $wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $table)) === $table;
+        }
+
+        return $exists ? $table : '';
+    }
+
+    /**
+     * Giải trình mà shop đã điền tại POS khi bấm "Tạo phiếu cân hàng".
+     * Đây là bản ghi ĐÃ ĐÓNG BĂNG tại thời điểm shop nhận trách nhiệm, khác với
+     * ghi chú trên trang báo cáo (ai cũng sửa được bất cứ lúc nào).
+     */
+    private static function get_pos_clearance($blog_id, $snapshot_code) {
+        global $wpdb;
+
+        $table = self::clearance_table();
+        if ($table === '') {
+            return null;
+        }
+
+        $row = $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM {$table} WHERE blog_id = %d AND snapshot_code = %s",
+            intval($blog_id),
+            $snapshot_code
+        ), ARRAY_A);
+
+        if (!$row) {
+            return null;
+        }
+
+        // lines_json: [{sku, name, excel_qty, system_qty, diff, note}, ...]
+        $line_notes = array();
+        $lines = json_decode((string) $row['lines_json'], true);
+        if (is_array($lines)) {
+            foreach ($lines as $line) {
+                if (!empty($line['sku']) && isset($line['note']) && $line['note'] !== '') {
+                    $line_notes[$line['sku']] = (string) $line['note'];
+                }
+            }
+        }
+
+        return array(
+            'method'          => (string) $row['method'],
+            'general_note'    => (string) $row['general_note'],
+            'line_notes'      => $line_notes,
+            'diff_items'      => intval($row['diff_items']),
+            'ledger_id'       => intval($row['ledger_id']),
+            'ledger_code'     => (string) $row['ledger_code'],
+            'cleared_by_name' => (string) $row['cleared_by_name'],
+            'cleared_at'      => (string) $row['cleared_at'],
+        );
+    }
 
     private static function get_snapshot($snapshot_id) {
         global $wpdb;

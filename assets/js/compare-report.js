@@ -489,6 +489,12 @@ jQuery(document).ready(function ($) {
             if (site.note_count > 0) {
                 badges += '<span class="badge bg-info"><i class="bx bx-comment-detail"></i> ' + site.note_count + '</span>';
             }
+            // Shop đã tự cân hàng ở POS -> quản trị khỏi phải xử lý shop này nữa.
+            if (site.settled) {
+                badges += site.settled.method === 'manual'
+                    ? '<span class="badge bg-dark" title="Shop đã giải trình và tạo phiếu cân hàng tại POS"><i class="bx bx-check-shield"></i> Đã cân</span>'
+                    : '<span class="badge bg-light text-dark" title="Tồn vốn đã khớp, không cần cân">Tự khớp</span>';
+            }
 
             html +=
                 '<div class="hcr-site-row' + isActive + '" data-site="' + esc(site.site_code) + '">' +
@@ -604,6 +610,38 @@ jQuery(document).ready(function ($) {
                 '<span class="hcr-sales-spacer">Đối chiếu ' + num(stats.total_items) + ' mặt hàng</span>' +
             '</div>';
 
+        // Dấu vết shop đã tự xử lý bên POS: đóng băng tại thời điểm nhận trách
+        // nhiệm nên chỉ hiển thị, không cho sửa ở đây.
+        var settled = '';
+        var cl = d.clearance;
+        if (cl && cl.method === 'manual') {
+            settled =
+                '<div class="hcr-settled">' +
+                    '<div class="hcr-settled-head">' +
+                        '<i class="bx bx-check-shield"></i>' +
+                        '<div>' +
+                            '<strong>Shop đã tự cân hàng tại POS</strong>' +
+                            '<div class="hcr-settled-meta">' +
+                                esc(cl.cleared_by_name || 'không rõ') + ' · ' + esc(shortTime(cl.cleared_at)) +
+                                ' · đã cân ' + num(cl.diff_items) + ' mặt hàng' +
+                                (cl.ledger_code ? ' · phiếu <code>' + esc(cl.ledger_code) + '</code>' : '') +
+                            '</div>' +
+                        '</div>' +
+                    '</div>' +
+                    (cl.general_note
+                        ? '<div class="hcr-settled-note"><span>Giải trình chung của shop:</span>' + esc(cl.general_note) + '</div>'
+                        : '<div class="hcr-settled-note hcr-settled-empty">Shop không ghi giải trình chung.</div>') +
+                '</div>';
+        } else if (cl && cl.method === 'auto_no_diff') {
+            settled =
+                '<div class="hcr-settled hcr-settled--auto">' +
+                    '<div class="hcr-settled-head"><i class="bx bx-check-circle"></i>' +
+                        '<div><strong>Tồn shop vốn đã khớp</strong>' +
+                        '<div class="hcr-settled-meta">Ghi nhận lúc ' + esc(shortTime(cl.cleared_at)) + ', không phải tạo phiếu cân hàng.</div>' +
+                    '</div></div>' +
+                '</div>';
+        }
+
         var siteNote =
             '<div class="hcr-note-block">' +
                 '<label><i class="bx bx-message-square-edit me-1"></i>Ghi chú chung của shop ' + esc(d.site.site_code) + '</label>' +
@@ -650,6 +688,7 @@ jQuery(document).ready(function ($) {
                         '<td class="hcr-cell-cmp hcr-cell-num text-end">' + num(item.system_qty) + '</td>' +
                         '<td class="hcr-cell-diff text-end ' + diffCls + (abs > 10 ? ' is-big' : '') + '">' + diffTxt + '</td>' +
                         '<td class="hcr-cell-note">' +
+                            posNoteHtml(item.sku) +
                             '<textarea class="form-control form-control-sm hcr-note-input" rows="1" data-scope="item"' +
                                 ' data-sku="' + esc(item.sku) + '" placeholder="Vì sao lệch?">' + esc(note.text) + '</textarea>' +
                             '<div class="hcr-note-status" data-status-for="' + esc(item.sku) + '">' + noteStatusText(note) + '</div>' +
@@ -687,11 +726,24 @@ jQuery(document).ready(function ($) {
         $('#hcrDetail').html(
             header +
             '<div class="hcr-detail-body">' +
-                hero + warn + salesline + siteNote + tableToolbar + table + salesNotes +
+                hero + warn + settled + salesline + siteNote + tableToolbar + table + salesNotes +
             '</div>'
         );
 
         setSidebar(state.sidebarCollapsed);
+    }
+
+    /**
+     * Giải trình shop đã khai cho đúng dòng này tại POS. Hiển thị ngay trên ô
+     * ghi chú của báo cáo để quản trị thấy shop đã nói gì trước khi viết thêm.
+     */
+    function posNoteHtml(sku) {
+        var cl = state.detail && state.detail.clearance;
+        if (!cl || !cl.line_notes || !cl.line_notes[sku]) {
+            return '';
+        }
+        return '<div class="hcr-posnote" title="Shop ghi khi tạo phiếu cân hàng tại POS">' +
+               '<i class="bx bx-store"></i>' + esc(cl.line_notes[sku]) + '</div>';
     }
 
     function noteStatusText(note) {
