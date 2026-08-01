@@ -377,6 +377,20 @@ jQuery(document).ready(function($) {
             return;
         }
 
+        // Tạo phiếu điều chỉnh là sửa tồn kho thật, không hoàn tác được.
+        if (typeof window.tgsHtsoftGuard === 'function' && !window.__tgsAdjUnlocked) {
+            window.tgsHtsoftGuard(
+                `Tạo phiếu điều chỉnh cho shop ${siteCode}`,
+                `${selectedCheckboxes.length} sản phẩm sẽ được đưa về đúng số của phần mềm cũ.`,
+                function () {
+                    window.__tgsAdjUnlocked = true;
+                    window.openAdjustmentModal(siteCode);
+                    window.__tgsAdjUnlocked = false;
+                }
+            );
+            return;
+        }
+
         const items = [];
         selectedCheckboxes.each(function() {
             items.push({
@@ -845,6 +859,22 @@ jQuery(document).ready(function($) {
 
     // Auto balance all websites
     window.autoBalanceAll = async function() {
+        // Nút nguy hiểm nhất trang: tạo phiếu điều chỉnh hàng loạt cho mọi shop.
+        if (typeof window.tgsHtsoftGuard === 'function' && !window.__tgsBalanceUnlocked) {
+            const siteCount = Object.keys(window.tabItemsCache || {}).length;
+            window.tgsHtsoftGuard(
+                'Tự cân hàng TẤT CẢ shop',
+                `Sẽ tạo phiếu điều chỉnh tồn kho cho ${siteCount} shop. Thao tác này không hoàn tác được.`,
+                function () {
+                    window.__tgsBalanceUnlocked = true;
+                    window.autoBalanceAll().finally(function () {
+                        window.__tgsBalanceUnlocked = false;
+                    });
+                }
+            );
+            return;
+        }
+
         const allSiteCodes = Object.keys(window.tabItemsCache || {});
 
         if (allSiteCodes.length === 0) {

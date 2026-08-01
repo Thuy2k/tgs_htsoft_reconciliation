@@ -82,6 +82,11 @@ class TGS_HTSOFT_Reconciliation {
         require_once TGS_HTSOFT_RECON_PLUGIN_DIR . 'includes/class-snapshot-module.php';
         TGS_HTSOFT_Snapshot_Module::init();
 
+        // Hỏi mật khẩu trước các nút không hoàn tác được. Nạp TRƯỚC gate-config
+        // để window.tgsHtsoftGuard đã sẵn sàng khi các script kia chạy.
+        require_once TGS_HTSOFT_RECON_PLUGIN_DIR . 'includes/class-action-guard.php';
+        TGS_HTSOFT_Action_Guard::init();
+
         // LUỒNG RIÊNG: cấu hình chặn bán hàng (tgs_pos đọc qua option mạng).
         require_once TGS_HTSOFT_RECON_PLUGIN_DIR . 'includes/class-gate-config.php';
         TGS_HTSOFT_Gate_Config::init();

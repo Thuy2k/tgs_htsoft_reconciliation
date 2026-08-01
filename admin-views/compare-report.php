@@ -108,8 +108,8 @@ $preselect_site     = isset($_GET['shop']) ? sanitize_text_field(wp_unslash($_GE
                         Chưa bán trên PM mới <span class="hcr-tab-count" data-count="norev">0</span>
                     </button>
                     <button type="button" class="hcr-tab" data-filter="missing"
-                            title="Shop có trong hệ thống nhưng file HTSOFT không xuất ra">
-                        HTSOFT bỏ sót <span class="hcr-tab-count" data-count="missing">0</span>
+                            title="Website đã có mã trong hệ thống nhưng chưa đưa vào vận hành">
+                        Chưa triển khai <span class="hcr-tab-count" data-count="missing">0</span>
                     </button>
                 </div>
             </div>

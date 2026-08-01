@@ -401,7 +401,7 @@ jQuery(document).ready(function ($) {
             { label: 'Đơn bán trên PM mới', value: num(snap.total_orders), cls: 'info', icon: 'bx-receipt' },
             { label: 'Doanh thu PM mới', value: money(snap.total_revenue), cls: 'success', icon: 'bx-money' },
             { label: 'Shop chưa bán trên PM mới', value: num(snap.sites_no_revenue), cls: 'warning', icon: 'bx-power-off' },
-            { label: 'Shop HTSOFT bỏ sót', value: num(state.missing.length), cls: 'secondary', icon: 'bx-minus-circle' }
+            { label: 'Website chưa triển khai', value: num(state.missing.length), cls: 'secondary', icon: 'bx-minus-circle' }
         ];
 
         var html = '';
@@ -464,15 +464,15 @@ jQuery(document).ready(function ($) {
             return;
         }
 
-        // Nhánh "HTSOFT bỏ sót" là shop chưa có trong file Excel nên không có số.
+        // Nhánh "Chưa triển khai": website chưa vận hành nên không có số liệu.
         if (state.filter === 'missing') {
-            var missingHtml = '<div class="hcr-missing-hint"><i class="bx bx-info-circle me-1"></i>Shop có mã trong hệ thống nhưng <strong>không xuất hiện trong file HTSOFT</strong> của lần quét này.</div>';
+            var missingHtml = '<div class="hcr-missing-hint"><i class="bx bx-info-circle me-1"></i>Website đã có mã trong hệ thống nhưng <strong>chưa đưa vào vận hành</strong>, nên phần mềm cũ không xuất dữ liệu.</div>';
             rows.forEach(function (site) {
                 missingHtml +=
                     '<div class="hcr-site-row hcr-site-missing">' +
                         '<div class="hcr-site-code">' + esc(site.site_code) + '</div>' +
                         '<div class="hcr-site-name">' + esc(site.site_name) + '</div>' +
-                        '<div class="hcr-site-badges"><span class="badge bg-secondary">Không có trong file Excel</span></div>' +
+                        '<div class="hcr-site-badges"><span class="badge bg-secondary">Chưa triển khai</span></div>' +
                     '</div>';
             });
             $list.html(missingHtml);

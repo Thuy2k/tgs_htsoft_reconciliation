@@ -129,6 +129,21 @@ jQuery(document).ready(function ($) {
             return;
         }
 
+        // Lưu phiên là chốt số cho toàn hệ thống, shop sẽ bị chặn bán hàng theo
+        // đúng bản này -> bắt xác nhận mật khẩu như các nút nguy hiểm khác.
+        if (typeof window.tgsHtsoftGuard === 'function' && !window.__tgsSaveUnlocked) {
+            window.tgsHtsoftGuard(
+                'Lưu phiên đối chiếu',
+                'Sẽ chốt số của ' + siteCodes.length + ' shop. Các shop sẽ bị chặn bán hàng cho tới khi giải trình xong bản này.',
+                function () {
+                    window.__tgsSaveUnlocked = true;
+                    $('#hcrSaveSnapshotBtn').trigger('click');
+                    window.__tgsSaveUnlocked = false;
+                }
+            );
+            return;
+        }
+
         ensureModal();
         $('#hcrSaveSiteCount').text(siteCodes.length);
         $('#hcrSaveLabel').val(defaultLabel());

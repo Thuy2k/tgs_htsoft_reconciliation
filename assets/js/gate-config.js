@@ -144,10 +144,23 @@ jQuery(document).ready(function ($) {
 
     /* --------------------------------------------------------------- */
 
-    $(document).on('click', '.tgs-gate-config-btn', function () {
+    function openConfig() {
         $('#gateConfigAlert').addClass('d-none');
         new bootstrap.Modal(document.getElementById('gateConfigModal')).show();
         load();
+    }
+
+    $(document).on('click', '.tgs-gate-config-btn', function () {
+        // Bấm nhầm ở đây là khoá hoặc mở nhầm việc bán hàng của cả hệ thống.
+        if (typeof window.tgsHtsoftGuard === 'function') {
+            window.tgsHtsoftGuard(
+                'Mở cấu hình chặn bán hàng',
+                'Cấu hình này quyết định shop nào bị khoá bán hàng khi còn chênh lệch.',
+                openConfig
+            );
+            return;
+        }
+        openConfig();
     });
 
     $(document).on('change', '.gate-site-cb', function () {

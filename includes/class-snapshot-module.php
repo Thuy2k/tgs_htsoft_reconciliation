@@ -115,7 +115,9 @@ class TGS_HTSOFT_Snapshot_Module {
             wp_enqueue_script(
                 'tgs-htsoft-snapshot-save',
                 TGS_HTSOFT_RECON_PLUGIN_URL . 'assets/js/snapshot-save.js',
-                array('jquery', 'tgs-htsoft-recon'),
+                // action-guard phải nạp trước để window.tgsHtsoftGuard sẵn sàng
+                // khi người dùng bấm "Lưu phiên đối chiếu".
+                array('jquery', 'tgs-htsoft-recon', 'tgs-htsoft-action-guard'),
                 file_exists($save_js) ? filemtime($save_js) : TGS_HTSOFT_RECON_VERSION,
                 true
             );

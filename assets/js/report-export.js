@@ -132,6 +132,14 @@ jQuery(document).ready(function ($) {
         return d.length === 3 ? (t + ' ' + d[2] + '/' + d[1] + '/' + d[0]) : String(value);
     }
 
+    /** Thời điểm bấm xuất file, theo giờ máy người xuất. */
+    function exportedAt() {
+        var d = new Date();
+        var p = function (n) { return n < 10 ? '0' + n : String(n); };
+        return p(d.getHours()) + ':' + p(d.getMinutes()) + ' ngày ' +
+               p(d.getDate()) + '/' + p(d.getMonth() + 1) + '/' + d.getFullYear();
+    }
+
     var MONEY_FMT = '#,##0" đ"';
     var NUM_FMT = '#,##0';
 
@@ -139,6 +147,7 @@ jQuery(document).ready(function ($) {
      * Sheet TỔNG QUAN
      * --------------------------------------------------------------- */
 
+    /** Mỗi shop đã được gắn sẵn site.__sheet để đặt link nhảy nội bộ. */
     function buildOverviewSheet(data) {
         var snap = data.snapshot;
         var sites = data.sites;
@@ -151,27 +160,18 @@ jQuery(document).ready(function ($) {
         put(ws, r, 0, 'BÁO CÁO ĐỐI CHIẾU TỒN KHO: PHẦN MỀM CŨ (HTSOFT) ↔ PHẦN MỀM MỚI', titleStyle(C.navy));
         fillRange(ws, r, 0, LAST, { fill: { fgColor: { rgb: C.navy } } });
         merge(ws, r, 0, r, LAST);
-        r += 2;
-
-        // --- Hai mốc thời gian ---
-        var metaRows = [
-            ['Phần mềm cũ (HTSOFT) chốt số lúc', fmtDateTime(snap.htsoft_export_at)],
-            ['Phần mềm mới đọc số lúc', fmtDateTime(snap.scanned_at)],
-            ['File nguồn', (snap.source_file || '--') + (snap.sheet_name ? ' · ' + snap.sheet_name : '')],
-            ['Người quét', snap.created_by_name || '--'],
-            ['Ghi chú của đợt quét', snap.admin_note || '(không có)']
-        ];
-
-        metaRows.forEach(function (row) {
-            put(ws, r, 0, row[0], labelStyle());
-            put(ws, r, 2, row[1], valueStyle({ font: { bold: true, sz: 10, color: { rgb: C.navy } } }));
-            fillRange(ws, r, 0, 1, { fill: { fgColor: { rgb: C.blueSoft } }, border: BORDER });
-            fillRange(ws, r, 2, 5, { fill: { fgColor: { rgb: C.white } }, border: BORDER });
-            merge(ws, r, 0, r, 1);
-            merge(ws, r, 2, r, 5);
-            r++;
-        });
         r++;
+
+        // Chỉ cần biết file xuất lúc nào; mốc chốt số của hai phần mềm là chi
+        // tiết vận hành, cấp trên không dùng tới.
+        put(ws, r, 0, 'Xuất lúc ' + exportedAt(), {
+            font: { italic: true, sz: 10.5, color: { rgb: C.white } },
+            fill: { fgColor: { rgb: C.blue } },
+            alignment: { horizontal: 'center', vertical: 'center' }
+        });
+        fillRange(ws, r, 0, LAST, { fill: { fgColor: { rgb: C.blue } } });
+        merge(ws, r, 0, r, LAST);
+        r += 2;
 
         // --- Các con số tổng ---
         var settledCount = sites.filter(function (s) { return s.clearance; }).length;
@@ -183,8 +183,7 @@ jQuery(document).ready(function ($) {
             ['Mặt hàng đang lệch', sites.reduce(function (a, s) { return a + s.diff_items; }, 0), C.red],
             ['Shop đã giải trình & cân hàng', settledCount, C.green],
             ['Shop CÒN LỆCH chưa giải trình', stillDiff.length, C.red],
-            ['Shop chưa bán trên phần mềm mới', noRevenue.length, C.amber],
-            ['Shop HTSOFT bỏ sót', missing.length, C.grey]
+            ['Shop chưa bán trên phần mềm mới', noRevenue.length, C.amber]
         ];
 
         put(ws, r, 0, 'TÌNH HÌNH CHUNG', headStyle(C.teal));
@@ -249,7 +248,18 @@ jQuery(document).ready(function ($) {
             var generalNote = cl && cl.general_note ? cl.general_note : (s.report_site_note || '');
 
             put(ws, r, 0, idx + 1, cellStyle(zebra, { alignment: { horizontal: 'center', vertical: 'center' } }), 'n');
-            put(ws, r, 1, s.site_code, cellStyle(zebra, { font: { bold: true, sz: 10, color: { rgb: C.navy } }, alignment: { horizontal: 'center', vertical: 'center' } }));
+            // Mã shop là link nhảy thẳng sang sheet của shop đó — sếp bấm một
+            // phát là tới, khỏi dò trong 65 tab ở đáy cửa sổ Excel.
+            var codeRef = put(ws, r, 1, s.site_code, cellStyle(zebra, {
+                font: { bold: true, sz: 10, underline: true, color: { rgb: '0563C1' } },
+                alignment: { horizontal: 'center', vertical: 'center' }
+            }));
+            if (s.__sheet) {
+                ws[codeRef].l = {
+                    Target: "#'" + s.__sheet.replace(/'/g, "''") + "'!A1",
+                    Tooltip: 'Mở sheet của shop ' + s.site_code
+                };
+            }
             put(ws, r, 2, s.site_name || '', cellStyle(zebra));
             put(ws, r, 3, s.diff_items, cellStyle(s.diff_items > 0 ? C.redSoft : zebra, {
                 font: { bold: true, sz: 10, color: { rgb: s.diff_items > 0 ? C.red : C.grey } },
@@ -286,10 +296,10 @@ jQuery(document).ready(function ($) {
             'Những shop này chưa đăng nhập phần mềm mới để giải trình và cân hàng.',
             stillDiff.map(function (s) { return [s.site_code, s.site_name || '', s.diff_items + ' mặt hàng lệch']; }));
 
-        // --- Khối: shop HTSOFT bỏ sót ---
+        // --- Khối: website chưa triển khai ---
         r = appendListBlock(ws, r, LAST, C.grey, C.greySoft,
-            'SHOP CÓ TRONG HỆ THỐNG NHƯNG HTSOFT KHÔNG XUẤT (' + missing.length + ')',
-            'File Excel từ phần mềm cũ không có dữ liệu của những shop này.',
+            'CÁC WEBSITE CHƯA TRIỂN KHAI (' + missing.length + ')',
+            'Website đã có mã trong hệ thống nhưng chưa đưa vào vận hành, nên phần mềm cũ không xuất dữ liệu.',
             missing.map(function (s) { return [s.site_code, s.site_name || '', '']; }));
 
         ws['!ref'] = XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: r + 2, c: LAST } });
@@ -351,7 +361,11 @@ jQuery(document).ready(function ($) {
      * Sheet của từng shop
      * --------------------------------------------------------------- */
 
-    function buildShopSheet(site, snap) {
+    /**
+     * @param {Object}  site
+     * @param {boolean} hasOverview Có sheet TỔNG QUAN để đặt link quay lại không.
+     */
+    function buildShopSheet(site, hasOverview) {
         var ws = {};
         var LAST = 7;
         var r = 0;
@@ -363,14 +377,24 @@ jQuery(document).ready(function ($) {
         merge(ws, r, 0, r, LAST);
         r++;
 
-        put(ws, r, 0, 'Phần mềm cũ chốt số lúc ' + fmtDateTime(snap.htsoft_export_at) +
-                      '   ·   Phần mềm mới đọc số lúc ' + fmtDateTime(snap.scanned_at), {
+        put(ws, r, 0, 'Xuất lúc ' + exportedAt(), {
             font: { italic: true, sz: 10, color: { rgb: C.white } },
             fill: { fgColor: { rgb: C.blue } },
             alignment: { horizontal: 'center', vertical: 'center' }
         });
         fillRange(ws, r, 0, LAST, { fill: { fgColor: { rgb: C.blue } } });
-        merge(ws, r, 0, r, LAST);
+        merge(ws, r, 0, r, LAST - 1);
+
+        // Đường về: file có tới vài chục tab, không có link này thì phải cuộn
+        // thanh tab ở đáy cửa sổ để quay lại bảng tổng.
+        if (hasOverview) {
+            var backRef = put(ws, r, LAST, '↩ Tổng quan', {
+                font: { bold: true, sz: 9.5, underline: true, color: { rgb: C.white } },
+                fill: { fgColor: { rgb: C.blue } },
+                alignment: { horizontal: 'center', vertical: 'center' }
+            });
+            ws[backRef].l = { Target: "#'TỔNG QUAN'!A1", Tooltip: 'Quay lại bảng tổng quan' };
+        }
         r += 2;
 
         // --- Số liệu bán hàng ---
@@ -586,16 +610,23 @@ jQuery(document).ready(function ($) {
      * Điều phối
      * --------------------------------------------------------------- */
 
-    /** Tên sheet Excel: tối đa 31 ký tự, không chứa : \ / ? * [ ] */
+    /**
+     * Tên sheet Excel: tối đa 31 ký tự, không chứa : \ / ? * [ ]
+     * Phải cắt 31 ký tự TRƯỚC khi đánh dấu đã dùng, nếu không hai mã dài giống
+     * nhau ở 31 ký tự đầu sẽ cùng ra một tên mà vẫn tưởng là khác.
+     */
     function sheetName(site, used) {
-        var base = String(site.site_code || 'shop').replace(/[:\\\/?*\[\]]/g, '-');
+        var base = String(site.site_code || 'shop').replace(/[:\\\/?*\[\]]/g, '-').slice(0, 31);
         var name = base;
         var suffix = 2;
+
         while (used[name]) {
-            name = (base + '-' + suffix++).slice(0, 31);
+            var tail = '-' + suffix++;
+            name = base.slice(0, 31 - tail.length) + tail;
         }
+
         used[name] = true;
-        return name.slice(0, 31);
+        return name;
     }
 
     function fileStamp(snap) {
@@ -638,14 +669,22 @@ jQuery(document).ready(function ($) {
             try {
                 var data = res.data;
                 var wb = XLSX.utils.book_new();
-                var used = {};
+                var withOverview = !siteCode;
 
-                if (!siteCode) {
+                // Chốt tên sheet TRƯỚC khi dựng sheet tổng quan, vì link nhảy
+                // phải trỏ đúng tên đã khử trùng lặp. Gắn thẳng lên từng shop
+                // thay vì map theo mã: hai shop trùng mã sẽ đè lên nhau.
+                var used = withOverview ? { 'TỔNG QUAN': true } : {};
+                data.sites.forEach(function (site) {
+                    site.__sheet = sheetName(site, used);
+                });
+
+                if (withOverview) {
                     XLSX.utils.book_append_sheet(wb, buildOverviewSheet(data), 'TỔNG QUAN');
                 }
 
                 data.sites.forEach(function (site) {
-                    XLSX.utils.book_append_sheet(wb, buildShopSheet(site, data.snapshot), sheetName(site, used));
+                    XLSX.utils.book_append_sheet(wb, buildShopSheet(site, withOverview), site.__sheet);
                 });
 
                 var name = siteCode
