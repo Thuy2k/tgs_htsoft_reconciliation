@@ -753,18 +753,63 @@
 .hcr-live-moved { color: #fd7e14; font-weight: 600; }
 .hcr-live-empty { color: #ced4da; font-size: 1rem; }
 
-/* --- Ghi chú phiếu bán trong ngày --- */
+/* --- Ghi chú nhân viên ghi trên phiếu bán hàng --- */
 .hcr-sales-notes {
-    margin-top: 14px;
-    background: var(--hcr-bg-soft);
-    border: 1px solid var(--hcr-border);
+    background: #fbf7fd;
+    border: 1px solid #e5d3ec;
+    border-left: 4px solid #7b2d8b;
     border-radius: 8px;
     padding: 10px 14px;
+    margin-bottom: 12px;
 }
 
-.hcr-sales-notes h6 { font-size: .82rem; font-weight: 700; color: #495057; }
-.hcr-sales-notes ul { margin: 0; padding-left: 18px; font-size: .8rem; }
-.hcr-sales-notes li { margin-bottom: 3px; }
+.hcr-sales-notes h6 {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 0 0 6px;
+    font-size: .82rem;
+    font-weight: 700;
+    color: #6b21a8;
+}
+
+.hcr-sales-notes h6 i { font-size: 1rem; }
+
+.hcr-sn-count {
+    background: #7b2d8b;
+    color: #fff;
+    border-radius: 20px;
+    padding: 0 7px;
+    font-size: .7rem;
+}
+
+.hcr-sales-notes ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    max-height: 150px;
+    overflow-y: auto;
+}
+
+.hcr-sales-notes li {
+    display: flex;
+    gap: 8px;
+    align-items: baseline;
+    font-size: .82rem;
+    color: #212529;
+    padding: 3px 0;
+    border-bottom: 1px dashed #ecdcf2;
+}
+
+.hcr-sales-notes li:last-child { border-bottom: 0; }
+
+.hcr-sn-time {
+    flex: 0 0 auto;
+    font-size: .72rem;
+    color: #9333ea;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+}
 
 /* --- Nhật ký ghi chú --- */
 .hcr-history-item {

@@ -30,9 +30,15 @@ $preselect_site     = isset($_GET['shop']) ? sanitize_text_field(wp_unslash($_GE
                 Chọn khung giờ quét, tìm mã shop của bạn, rồi giải thích những mặt hàng bị lệch.
             </p>
         </div>
-        <button type="button" class="btn btn-outline-secondary btn-sm" id="hcrCopyLinkBtn">
-            <i class="bx bx-link me-1"></i>Copy link
-        </button>
+        <div class="d-flex gap-2 flex-wrap">
+            <button type="button" class="btn btn-success btn-sm" id="hcrExportAllBtn"
+                    title="Xuất file Excel gồm 1 sheet tổng quan và mỗi shop 1 sheet riêng">
+                <i class="bx bx-download me-1"></i>Xuất Excel tất cả shop
+            </button>
+            <button type="button" class="btn btn-outline-secondary btn-sm" id="hcrCopyLinkBtn">
+                <i class="bx bx-link me-1"></i>Copy link
+            </button>
+        </div>
     </div>
 
     <div id="hcrAlert" class="alert d-none" role="alert">

@@ -50,6 +50,7 @@ class TGS_HTSOFT_Snapshot_Module {
         add_action('wp_ajax_tgs_htsoft_report_save_note', array(__CLASS__, 'ajax_save_note'));
         add_action('wp_ajax_tgs_htsoft_report_note_history', array(__CLASS__, 'ajax_note_history'));
         add_action('wp_ajax_tgs_htsoft_report_live_stock', array(__CLASS__, 'ajax_live_stock'));
+        add_action('wp_ajax_tgs_htsoft_report_export', array(__CLASS__, 'ajax_export_bundle'));
     }
 
     public static function maybe_install() {
@@ -136,12 +137,30 @@ class TGS_HTSOFT_Snapshot_Module {
 
         $js_path  = TGS_HTSOFT_RECON_PLUGIN_DIR . 'assets/js/compare-report.js';
         $css_path = TGS_HTSOFT_RECON_PLUGIN_DIR . 'assets/css/compare-report.css';
+        $xls_path = TGS_HTSOFT_RECON_PLUGIN_DIR . 'assets/js/report-export.js';
+
+        // Bản SheetJS có hỗ trợ style, dùng chung với trang đối chiếu.
+        wp_enqueue_script(
+            'sheetjs',
+            'https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js',
+            array(),
+            '1.2.0',
+            true
+        );
 
         wp_enqueue_script(
             'tgs-htsoft-compare-report',
             TGS_HTSOFT_RECON_PLUGIN_URL . 'assets/js/compare-report.js',
             array('jquery'),
             file_exists($js_path) ? filemtime($js_path) : TGS_HTSOFT_RECON_VERSION,
+            true
+        );
+
+        wp_enqueue_script(
+            'tgs-htsoft-report-export',
+            TGS_HTSOFT_RECON_PLUGIN_URL . 'assets/js/report-export.js',
+            array('jquery', 'sheetjs', 'tgs-htsoft-compare-report'),
+            file_exists($xls_path) ? filemtime($xls_path) : TGS_HTSOFT_RECON_VERSION,
             true
         );
 
@@ -864,6 +883,144 @@ class TGS_HTSOFT_Snapshot_Module {
             wp_send_json_success(array(
                 'entries' => array_slice($entries, 0, 200),
                 'total'   => count($entries),
+            ));
+        } catch (Exception $e) {
+            wp_send_json_error(array('message' => $e->getMessage()));
+        }
+    }
+
+    /**
+     * Gom toàn bộ dữ liệu cần cho file Excel trong MỘT request.
+     *
+     * Xuất tất cả shop mà gọi lần lượt 65 request thì vừa chậm vừa dễ đứt giữa
+     * chừng. Ở đây chỉ lấy DÒNG LỆCH (không lấy hàng khớp) nên dù 65 shop tổng
+     * dữ liệu vẫn nhỏ.
+     *
+     * @param string $_POST['site_code'] Có thì chỉ xuất 1 shop.
+     */
+    public static function ajax_export_bundle() {
+        self::guard_read();
+
+        global $wpdb;
+
+        try {
+            $snapshot = self::resolve_snapshot_from_request();
+            $only_site = isset($_POST['site_code']) ? sanitize_text_field(wp_unslash($_POST['site_code'])) : '';
+
+            $t_site = TGS_HTSOFT_Snapshot_DB::table_site();
+            if ($only_site !== '') {
+                $rows = $wpdb->get_results($wpdb->prepare(
+                    "SELECT * FROM {$t_site} WHERE snapshot_id = %d AND site_code = %s",
+                    $snapshot->snapshot_id,
+                    $only_site
+                ));
+            } else {
+                $rows = $wpdb->get_results($wpdb->prepare(
+                    "SELECT * FROM {$t_site} WHERE snapshot_id = %d ORDER BY diff_items DESC, site_code ASC",
+                    $snapshot->snapshot_id
+                ));
+            }
+
+            if (empty($rows)) {
+                throw new Exception('Lần quét này chưa có dữ liệu shop nào');
+            }
+
+            // Gom ghi chú của trang báo cáo cho cả phiên bằng 1 truy vấn.
+            $notes_by_site = array();
+            $note_rows = $wpdb->get_results($wpdb->prepare(
+                "SELECT site_code, note_scope, sku, note_text, updated_by_name, updated_at
+                 FROM " . TGS_HTSOFT_Snapshot_DB::table_note() . "
+                 WHERE snapshot_id = %d AND note_text <> ''",
+                $snapshot->snapshot_id
+            ));
+            foreach ((array) $note_rows as $n) {
+                if ($n->note_scope === 'site') {
+                    $notes_by_site[$n->site_code]['site'] = (string) $n->note_text;
+                } else {
+                    $notes_by_site[$n->site_code]['items'][$n->sku] = (string) $n->note_text;
+                }
+            }
+
+            $sites = array();
+            $covered = array();
+
+            foreach ($rows as $row) {
+                $blog_id = intval($row->blog_id);
+                $covered[$row->site_code] = true;
+
+                $detail = TGS_HTSOFT_Snapshot_Store::read_snapshot(
+                    $blog_id,
+                    $snapshot->scan_date,
+                    $snapshot->snapshot_code
+                );
+
+                $clearance = self::get_pos_clearance($blog_id, $snapshot->snapshot_code);
+                $report_notes = isset($notes_by_site[$row->site_code]) ? $notes_by_site[$row->site_code] : array();
+
+                // Chỉ giữ dòng lệch: hàng khớp không có gì để giải trình.
+                $items = array();
+                if ($detail && !empty($detail['items'])) {
+                    foreach ($detail['items'] as $item) {
+                        if (abs(floatval($item['diff'])) <= 0.01) {
+                            continue;
+                        }
+                        $sku = (string) $item['sku'];
+                        $items[] = array(
+                            'sku'         => $sku,
+                            'name'        => (string) $item['name'],
+                            'htsoft_qty'  => floatval($item['htsoft_qty']),
+                            'system_qty'  => floatval($item['system_qty']),
+                            'diff'        => floatval($item['diff']),
+                            'pos_note'    => ($clearance && isset($clearance['line_notes'][$sku])) ? $clearance['line_notes'][$sku] : '',
+                            'report_note' => isset($report_notes['items'][$sku]) ? $report_notes['items'][$sku] : '',
+                        );
+                    }
+
+                    usort($items, function ($a, $b) {
+                        return abs($b['diff']) <=> abs($a['diff']);
+                    });
+                }
+
+                $sites[] = array(
+                    'site_code'        => $row->site_code,
+                    'site_name'        => $row->site_name,
+                    'blog_id'          => $blog_id,
+                    'total_items'      => intval($row->total_items),
+                    'diff_items'       => intval($row->diff_items),
+                    'diff_qty_plus'    => floatval($row->diff_qty_plus),
+                    'diff_qty_minus'   => floatval($row->diff_qty_minus),
+                    'orders_count'     => intval($row->orders_count),
+                    'revenue'          => floatval($row->revenue),
+                    'refund_amount'    => floatval($row->refund_amount),
+                    'net_revenue'      => floatval($row->net_revenue),
+                    'has_activity'     => intval($row->has_activity),
+                    'items'            => $items,
+                    'sales_notes'      => ($detail && !empty($detail['sales_notes'])) ? $detail['sales_notes'] : array(),
+                    'report_site_note' => isset($report_notes['site']) ? $report_notes['site'] : '',
+                    'clearance'        => $clearance,
+                    'has_detail'       => $detail ? 1 : 0,
+                );
+            }
+
+            // Shop có mã nhưng HTSOFT không xuất ra (chỉ cần khi xuất tất cả).
+            $missing = array();
+            if ($only_site === '') {
+                try {
+                    require_once TGS_HTSOFT_RECON_PLUGIN_DIR . 'includes/class-feedback-sites.php';
+                    foreach (TGS_HTSOFT_Feedback_Sites::get_all_shops() as $shop) {
+                        if (!isset($covered[$shop['site_code']])) {
+                            $missing[] = $shop;
+                        }
+                    }
+                } catch (Exception $e) {
+                    $missing = array();
+                }
+            }
+
+            wp_send_json_success(array(
+                'snapshot' => self::format_snapshot($snapshot),
+                'sites'    => $sites,
+                'missing'  => $missing,
             ));
         } catch (Exception $e) {
             wp_send_json_error(array('message' => $e->getMessage()));

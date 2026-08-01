@@ -35,6 +35,9 @@ jQuery(document).ready(function ($) {
         liveStockAt: {}
     };
 
+    // report-export.js đọc lần quét và shop đang mở từ đây để dựng file Excel.
+    window.tgsHcrState = state;
+
     /* ------------------------------------------------------------------
      * Tiện ích
      * --------------------------------------------------------------- */
@@ -559,9 +562,12 @@ jQuery(document).ready(function ($) {
                         ' và <strong>' + esc(shortTime(d.snapshot.scanned_at)) + '</strong> (phần mềm mới)' +
                     '</div>' +
                 '</div>' +
-                '<div class="d-flex gap-2 align-items-center">' +
+                '<div class="d-flex gap-2 align-items-center flex-wrap">' +
                     '<button class="hcr-sidebar-toggle" id="hcrSidebarToggle"></button>' +
-                    '<button class="btn btn-sm btn-outline-secondary" id="hcrHistoryBtn"><i class="bx bx-history me-1"></i>Nhật ký ghi chú</button>' +
+                    '<button class="btn btn-sm btn-success" id="hcrExportSiteBtn">' +
+                        '<i class="bx bx-download me-1"></i>Xuất Excel shop này</button>' +
+                    '<button class="btn btn-sm btn-outline-secondary" id="hcrHistoryBtn">' +
+                        '<i class="bx bx-history me-1"></i>Nhật ký ghi chú</button>' +
                 '</div>' +
             '</div>';
 
@@ -714,11 +720,18 @@ jQuery(document).ready(function ($) {
                 '</table>' +
             '</div>';
 
+        // Ghi chú nhân viên ghi trên phiếu bán hàng: đặt ngay dưới khối doanh thu
+        // chứ không nhét cuối trang, vì đây thường là lời giải thích cho chênh
+        // lệch (trả quà tích điểm, đổi hàng, bán thiếu...).
         var salesNotes = '';
         if (d.sales_notes && d.sales_notes.length) {
-            salesNotes = '<div class="hcr-sales-notes"><h6><i class="bx bx-note me-1"></i>Ghi chú nhân viên đã ghi trên phiếu bán hàng hôm đó (' + d.sales_notes.length + ')</h6><ul>';
+            salesNotes =
+                '<div class="hcr-sales-notes">' +
+                    '<h6><i class="bx bx-receipt"></i>Ghi chú nhân viên ghi trên phiếu bán hàng hôm đó' +
+                    '<span class="hcr-sn-count">' + d.sales_notes.length + '</span></h6><ul>';
             d.sales_notes.forEach(function (note) {
-                salesNotes += '<li><span class="text-muted">' + esc(shortTime(note.created_at)) + '</span> — ' + esc(note.note) + '</li>';
+                salesNotes += '<li><span class="hcr-sn-time">' + esc(shortTime(note.created_at)) + '</span>' +
+                              esc(note.note) + '</li>';
             });
             salesNotes += '</ul></div>';
         }
@@ -726,7 +739,7 @@ jQuery(document).ready(function ($) {
         $('#hcrDetail').html(
             header +
             '<div class="hcr-detail-body">' +
-                hero + warn + settled + salesline + siteNote + tableToolbar + table + salesNotes +
+                hero + warn + settled + salesline + salesNotes + siteNote + tableToolbar + table +
             '</div>'
         );
 
