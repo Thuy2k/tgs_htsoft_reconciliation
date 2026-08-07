@@ -74,20 +74,56 @@ class TGS_HTSOFT_Snapshot_Module {
      * quản trị như trang đối chiếu gốc.
      */
     public static function add_nav_item($workflow_nav, $current_view) {
-        if (!isset($workflow_nav['reports']['sections'])) {
+        /*
+         * Nằm ở Quản trị → "Công cụ đối chiếu".
+         *
+         * Đây là công cụ kỹ thuật để soi lệch giữa HTSOFT và hệ thống, không
+         * phải báo cáo nghiệp vụ. Menu Báo cáo nay chỉ giữ báo cáo thật.
+         *
+         * ── VÌ SAO DÒ THEO 'key' CHỨ KHÔNG THEO TÊN ──────────────────────
+         *
+         * Bản trước dò đúng chuỗi 'Công cụ đối chiếu', không thấy thì lặng lẽ
+         * bỏ qua. Hậu quả đã gặp thật: trên server mục này BIẾN MẤT khỏi menu
+         * trong khi trang vẫn mở được bình thường — vì route đăng ký vô điều
+         * kiện, còn menu thì phụ thuộc một chuỗi chữ. Không có lỗi, không có
+         * dấu hiệu gì, chỉ là thiếu một dòng menu.
+         *
+         * Giờ dò theo 'key' (mốc bền), tên hiển thị chỉ là đường lui cho bản
+         * menu cũ chưa có 'key'.
+         */
+        if (!isset($workflow_nav['admin']['sections'])) {
             return $workflow_nav;
         }
 
-        foreach ($workflow_nav['reports']['sections'] as $key => $section) {
-            if (isset($section['heading']) && $section['heading'] === 'Kho & vận hành') {
-                $workflow_nav['reports']['sections'][$key]['items'][] = array(
-                    'view'  => self::VIEW_REPORT,
-                    'label' => 'So sánh HTSOFT / hệ thống',
-                    'icon'  => 'bx bx-git-compare',
-                );
+        $item = array(
+            'view'  => self::VIEW_REPORT,
+            'label' => 'So sánh HTSOFT / hệ thống',
+            'icon'  => 'bx bx-git-compare',
+        );
+
+        foreach ($workflow_nav['admin']['sections'] as $key => $section) {
+            $matched = (isset($section['key']) && $section['key'] === 'recon-tools')
+                || (isset($section['heading']) && $section['heading'] === 'Công cụ đối chiếu');
+
+            if ($matched) {
+                $workflow_nav['admin']['sections'][$key]['items'][] = $item;
                 return $workflow_nav;
             }
         }
+
+        /*
+         * Không tìm thấy thì TỰ DỰNG khối, đừng im lặng bỏ qua.
+         *
+         * Thiếu một dòng menu mà không báo gì là lỗi khó lần nhất: người dùng
+         * tưởng chưa được cấp quyền, còn người sửa thì không biết bắt đầu từ
+         * đâu vì trang vẫn chạy tốt.
+         */
+        $workflow_nav['admin']['sections'][] = array(
+            'key'     => 'recon-tools',
+            'heading' => 'Công cụ đối chiếu',
+            'icon'    => 'bx bx-git-compare',
+            'items'   => array($item),
+        );
 
         return $workflow_nav;
     }
