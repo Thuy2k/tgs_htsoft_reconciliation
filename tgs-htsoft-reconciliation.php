@@ -76,6 +76,10 @@ class TGS_HTSOFT_Reconciliation {
         require_once TGS_HTSOFT_RECON_PLUGIN_DIR . 'includes/class-feedback-module.php';
         TGS_HTSOFT_Feedback_Module::init();
 
+        /* Chiều ngược lại: feedback nhận về đã lọc thành việc, xuất ra để chia team */
+        require_once TGS_HTSOFT_RECON_PLUGIN_DIR . 'includes/class-task-export.php';
+        TGS_HTSOFT_Task_Export::init();
+
         // LUỒNG RIÊNG: lưu vết phiên đối chiếu + trang báo cáo cho toàn bộ shop.
         require_once TGS_HTSOFT_RECON_PLUGIN_DIR . 'includes/class-snapshot-db.php';
         require_once TGS_HTSOFT_RECON_PLUGIN_DIR . 'includes/class-snapshot-store.php';

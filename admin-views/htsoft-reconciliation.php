@@ -28,6 +28,14 @@ if (!defined('ABSPATH')) {
                 title="Tạo file Excel khảo sát feedback cho tất cả shop (mỗi shop 1 tab riêng)">
             <i class="bx bx-message-square-detail me-1"></i>Xuất Excel feedback shop
         </button>
+        <!--
+            Chiều ngược lại của nút bên trên: nút kia GỬI phiếu khảo sát đi,
+            nút này lấy feedback NHẬN VỀ đã lọc thành danh sách việc để chia team.
+        -->
+        <button type="button" class="btn btn-outline-success tgs-task-export-btn"
+                title="Xuất danh sách task đã lọc từ feedback khảo sát, có tô màu theo trạng thái và độ khó">
+            <i class="bx bx-task me-1"></i>Xuất Excel lọc task
+        </button>
     </div>
 </div>
 

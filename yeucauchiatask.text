@@ -1,0 +1,83 @@
+STT	Tên tính năng	Phân loại	Nội dung ý kiến/ Đề xuất cải tiến	Ghi chú/Hình ảnh	Ngày tiếp nhập	Ngày xử lý của PM	Trạng thái	Ghi chú
+1	Phiếu nhập kho	Công cụ	Không nhập tên NCC vẫn cho lưu phiếu: Bổ sung tên ncc vào trường bắt buộc		05/08/2026	06/08	Đang xử lý	
+2		Công cụ	Khi show phiếu nhập kho ở phần tổng hợp phiếu nhập, ko thấy tên ncc, đơn giá, thành tiền, chiết khấu của hàng hóa: Bổ sung thông tin		05/08/2026	06/08	Đang xử lý	
+3		Công cụ	Bổ sung trường nhập thông tin hóa đơn thuế: kí hiệu, mẫu số, ngày hđ		05/08/2026			
+4		Công cụ	Khi xem tổng hợp phiếu nhập kho theo khoảng thời gian, mỗi lần xem xong 1 phiếu ấn quay lại thì giao diện trở về ngày hiện tại chứ ko phải khoảng thời gian đang check: Cập nhật chức năng xem phiếu giống HTsoft		05/08/2026			
+5		Công cụ	Bỏ bớt nội dung tồn min, max, khối lượng dự kiến, số lượng chứng từ trên pnk		05/08/2026	06/08	Đang xử lý	
+6	Phiếu thu, chi, UCN, Báo có	Công cụ	Không có trường danh sách khách hàng để chọn tên khách, UNC, Báo có ko có trường chọn tk ngân hàng: Bổ sung		05/08/2026			
+7	Hóa đơn bán lẻ	Công cụ	Chỉ có 1 hình thức thanh toán là tiền mặt: Bổ sung		05/08/2026			
+8	PHiếu trả hàng NCC	Công cụ	Không chọn được mặt hàng cần trả dù đã nhập kho: check lại		05/08/2026			
+9	Báo cáo tồn kho	Công cụ	Chỉ có thể xem được tồn của từng shop: đx có thể xem tồn all các shop trong cùng chi nhánh		05/08/2026			
+10		Công cụ	Từ báo cáo tồn kho không xem được chi tiết phát sinh từng mã hàng: Bổ sung chức năng giống HT		05/08/2026			
+11		Giao diện	Không cố định thanh tiêu đề trên các báo cáo: Chỉnh lại		05/08/2026	06/08	Đang xử lý	
+12	Báo cáo danh mục khách hàng	Công cụ	Không xem được chi tiết lịch sử mua hàng: Bổ sung		05/08/2026			
+13	Khác	Công cụ	Giữ nguyên tính năng các phần hành tương tự như HT soft và nâng cấp thêm tính năng có thể in chứng từ có chữ kí số trên pm, báo cáo khách hàng thân thiết hoàn thiện, có thể thao tác trên pm nếu mất điện		05/08/2026			
+14	Phần mua hàng	Công cụ	Bê chức năng phân tích mua hàng và phân tích chuyển kho từ hệ thống HTsoft sang		05/08/2026			
+15	Chức năng Import	Công cụ	để phục vụ cho phần chuyển đổi dữ liệu trước mắt và việc nhập liệu nhiều phiếu sau này. Các bộ phận cần chức năng IP		05/08/2026			
+16	Phần bán hàng	Công cụ	Chưa có báo cáo nào cả		05/08/2026			
+17	Tách data NB và Thuế	Công cụ	Xây dựng cơ chế đồng bộ NB và thuế để thừa hưởng dữ liệu của nhau		05/08/2026			
+18	Tách data NB và Thuế	Công cụ	Yêu cầu PM làm việc cụ thể với chị Thúy và chị V.Phương về vấn đề này		05/08/2026			
+19	PM chạy trên WEB hay bộ cài vào máy Clien		Các bạn xem xét nhé: nếu PM đẩy lên web thì chỉ cần biết được link là ai cũng có thể đăng nhập, nếu hacker họ chạy 1 lệnh 1000 user đăng nhập vào thì hệ thống của bạn có bị sập ko Nếu cài trên máy clien việc tấn công sẽ khó hơn và các giao diện đã được lưu trên máy clien nên sẽ ko mất thời gian lần nào đăng nhập cũng phải load form mà hệ thống bán hàng, mua hàng kế toán, rất nhiều form nhiều chức năng, nó khác với các trang web thương mại thông thường		05/08/2026			
+20	Tinh chỉnh giao diện	Giao diện	PM lên kế hoạch tinh chỉnh, làm mượt phần giao diện, thao tác của người dùng đạt khoảng 70 - 80% thì hãy đưa lên trải nghiệm để ko mất thời gian của các bộ phận và ngay chính các bạn		05/08/2026			
+21	Tài liệu phân quyền	Tài liệu	Gửi bộ phận IT PM TGS cây phân quyền đến từng vị trí, từng chức năng		05/08/2026			
+22	Tài liệu chi tiết từng chức năng 	Tài liệu	Mô tả rõ chức năng này để làm gì và cấu hình ở đâu, như thế nào		05/08/2026	06/08	Đang xử lý	File tài liệu chi tiết chức năng sẽ được update theo tiến độ hoàn thiện của các phân hệ ạ (HDSD_BTsoft )
+23	Chức năng khóa kỳ	Công cụ	Chưa thấy chức năng khóa kỳ của từng modul(bán hàng/mua hàng/ kho...). Chức năng này là rất cần thiết, để tránh trường hợp dữ liệu đã gửi thuế, đã lên báo cáo tài chính rồi mà người dùng vẫn cố ý vào sửa thông tin		05/08/2026			
+24			- Không có phần quản trị hệ thống		05/08/2026			
+25	- Danh mục khách hàng: 		 không có mã Khách hàng,  không tìm được theo tên ,  không có trường MST dành cho khách hàng cá nhân,  có tính năng import danh mục KH/ NCC nhg ko có file Template => yêu cầu đối với danh mục có tính năng import file excel		05/08/2026			
+26	- Danh mục hàng hoá:		 không thấy mục thêm mới mã hàng, không xem được chi tiết mã hàng có sẵn		05/08/2026			
+27	- CTKM: 		 không xem được cách tạo CTKM. Chính sách bán hàng tại cửa hàng: Danh sách CTKM nên để theo list để tiện theo dõi , không xem được chi tiết CTKM. Danh mục sp km nhiều không có thanh cuộn để kéo xuống mà phải dùng chuột khó thao tác , lâu => tất cả các màn hình đều không có thanh cuộn		05/08/2026			
+28			- pm có qly theo lô date không?		05/08/2026			
+29			- Không thấy có các báo cáo: bán hàng chi tiết, tổng hợp báo cáo bán hàng, Nhập kho…		05/08/2026			
+30	- Hoá đơn bán hàng:		 đối với những mã hàng tồn =0 thì không cho hiển thị mã hàng khi tìm mã hàng, chưa hiển thị lịch sử mua/bán/ trả lại hàng của 1 khách hàng, chưa security CTKM theo chi nhánh, hiển thị quá nhiều ctr		05/08/2026			
+31			- PM nên bổ sung các tính năng sử dụng bàn phím thay vì dùng chuột, tiết kiệm dc thời gian vs thao tác nhanh hơn		05/08/2026			
+32			- PM nên có quy tắc chung, đồng nhất trên toàn hệ thống		05/08/2026			
+33	Danh mục sản phẩm		1 Cách tra cứu Danh mục sản phẩm trên 1 line: Cho phép tìm theo: Mã hàng, Tên hàng, Barcode, Mã NCC, SKU, Tên viết tắt. Hỗ trợ tìm gần đúng (không cần gõ đủ tên).		05/08/2026			
+34			"2.  Màn hình chính: chưa thể hiện 
++ Barcode Nhà sản xuất -  chưa thể hiện bên ngoài tiện tra cứu, mà phải kích đúp chi tiết
++ Thể hiện rõ: Sản phẩm này → thuộc Nhóm/ ngành hàng nào."	Mong muốn thể hiện để hạn chế phải mở chi tiết.	05/08/2026			
+35			3. Barcode: Cho phép 1 hàng có nhiều Barcode (Barcode NSX, Barcode nội bộ, Barcode theo quy cách).	Thiết lập và cấu trúc như thế nào?.	05/08/2026			
+36			4. Export toàn bộ hoặc theo điều kiện lọc; xuất đầy đủ tất cả các trường dữ liệu; cho phép lựa chọn cột cần xuất.	Hướng dẫn cách xuất toàn bộ thông tin chi tiết/ tiêu chí cần	05/08/2026			
+37			5. Mong muốn đưa toàn bộ quy cách hàng hóa vào hệ thống để thuận tiện tra cứu….	"Quản lý nhiều cấp quy cách (Lon → Lốc → Thùng → Pallet). Phục vụ nhập hàng, bán hàng và kiểm kê. Mong muốn cài trên phần mềm luôn:
+- 1 thùng Bimbosan 400g = 12 lon
+- 1 thùng Bimbosan 900g = 6 lon"	05/08/2026	06/08	Đang xử lý	Trên thanh menu Danh mục --> Quy đổi tồn HTsoft, chi tiết hướng dẫn PM đã update tại HDSD_BTsoft (mục 5.3) ạ
+38			6. Đơn vị tính: khai báo nhiều ĐVT (Lon - Lốc - Thùng) và quy đổi tự động khi nhập, bán.	Xem chỗ nào	05/08/2026			
+39			7. Lưu hình ảnh: Lưu hình ảnh sản phẩm, CO/CQ, công bố, catalogue, hợp đồng... trong danh mục.	Có đáp ứng lưu hết không	05/08/2026			
+40			8. Nhật ký User tác động	Lưu lịch sử ai sửa, sửa lúc nào, sửa nội dung gì để dễ kiểm tra.	05/08/2026			
+41	Kế toán ⟶ Nhập xuất kho ⟶ Tạo phiếu nhập kho		1. Trong trường hợp sửa Phiếu nhập kho: hệ thống đang mờ xám Mã NCC, Tên hàng hóa dịch vụ	Mở ra để thuận tiện thao tác cho Người dùng: lâu, gây nhiễu dữ liệu	05/08/2026			
+42			2. Báo cáo chi tiết mua hàng : NCC, mã hàng, SL, đơn giá, thành tiền .....	Chưa biết xem ở đâu?.	05/08/2026			
+43			"3. In Phiếu nhập kho 
+- Phiếu NK phục vụ kiểm hàng kho theo các yc quản trị hàng hóa...
+- Phiếu NK theo TT99/2025"	"- Đề xuất thiết kế tạm thời 3 phiên bản HTsoft. Lưu ý: Phiếu nhập kho kế toán đang theo mẫu TT99/2025 BTC.
+- Nhờ PM nghiên cứu vì Phiếu nhập kho in phục vụ lưu Hồ sơ thuế luôn, có ký nhận thực tế từ nhiều người...để giảm thiểu quá trình in ấn, xử lý 1 công việc nhiều lần, nhiều mẫ phiếu khác nhau. Phiếu phục vụ cả Nội bộ và thuế"	05/08/2026			
+			4. Kết xuất Phiếu nhập kho ra Excel: chưa chính xác, thiếu các thông tin cơ bản: Đơn vị tính, thành tiền trước thuế, TT sau thuế ....	Chỉnh sửa lại mẫu	05/08/2026			
+			5. Có chức năng Import danh sách nhiều Phiếu nhập kho với nhiều nhà cung cấp khác nhau ....	Chưa biết làm như thế nào?.	05/08/2026			
+			6. Thể hiện các chức năng cụ thể của Phần hành kho: tổng hợp , mở rộng để người dùng thuận tiện sử dụng	"VD:
+- Thẻ kho chi tiết 
+- Báo cáo doanh số mua hàng theo kho: chi tiết theo mặt hàng, nhóm hàng , kho hàng...
+- Báo cáo giá vốn chi tiết mặt hàng, nhóm hàng....
+- Báo cáo hàng nhập khuyến mại... phục vụ mục đích quản trị"	05/08/2026			
+			7. Phần giá trị hàng hóa: vận chuyển phân bổ, bốc xếp, điều chỉnh giá vốn... tự động chia cho các mặt hàng -> cấu thành giá vốn hàng hóa thì nhập liệu như thế nào, có thể link và chọn phiếu nào, mặt hàng nào không?	Phần mềm BTsoft đang xây dựng ntn?.	05/08/2026			
+			"8. Trong các trường hợp muốn copy Phiếu nhập kho này thành loại phiếu mới: 
+- Phiếu nhập kho
+- Phiếu chuyển kho
+- Hóa đơn bán hàng....."	Cách làm như thế nào? PM đã xây dựng chưa?.	05/08/2026			
+			"9. Quy tắc đánh số phiếu Nhập kho ra sao,  kiểm tra quy tắc sinh số Phiếu nhập kho theo thiết lập của hệ thống.
+Phiếu chỉ được cấp số chính thức khi lưu thành công/duyệt thành công (theo quy định của phần mềm).
+- Đảm bảo không trùng số phiếu, kể cả khi nhiều người dùng tạo phiếu đồng thời.
+- Đã kiểm tra việc khi nhiều người dùng tạo phiếu cùng thời điểm vẫn sinh số chính xác, không trùng lặp chưa"	PM đang xây dựng ntn?.	05/08/2026			
+			"10. Đối chiếu giữa các loại phiếu khác nhau
+- Phiếu nhập kho có liên kết và đối chiếu được với Đơn mua hàng (PO), Hóa đơn NCC, Phiếu giao hàng, Hợp đồng hay không? 
+- Có cảnh báo khi số lượng/đơn giá khác nhau không?
+Trường hợp nếu nhập nhiều lần theo PO thì hệ thống theo dõi số lượng đã nhập, còn lại, không cho nhập vượt nếu thiết lập kiểm soát không ?."	PM đang xây dựng ntn?.	05/08/2026			
+			11. Import/Export dữ liệu: Mẫu dữ liệu gắn trên hệ thống để Người dùng thuận tiện khi sử dụng, mẫu phiếu quy định các trường thông tin bắt buộc cần có khi Import, export...Có thể thiết kế nhiều dạng khác nhau phụ thuộc mục đích quản trị 	PM đang xây dựng ntn?.	05/08/2026			
+			12. Phiếu nhập kho có nhiều cấp Phê duyệt phiếu, PM đang thiết kế việc ghi nhận công nợ NCC tại thời điểm Phiếu Thành công chưa? Trường hợp các phiếu chưa phê duyệt thành công đang thống kê ở Báo cáo nào?.	PM đang xây dựng ntn?.	05/08/2026			
+45	Chức năng tính giá vốn	Tài liệu	Hiện PM chưa phát triển phần kế toán thì cho mình hỏi Giá vốn sẽ tính như thế nào. Các bạn gửi giúp mình công thức tính giá vốn và phương phát tính GV các bạn đang hoặc sẽ xây dựng nhé		05/08/2026			
+46	Báo cáo CTKM	Công cụ	IT đã gửi file tập hợp đầu ra các báo cáo CTKM mà nhận được từ Kế toán cho các bạn PM BTsoft					
+47	Màn hình Đơn hàng	Công cụ	Thiếu thông tin kênh bán hàng, bộ phận ghi nhận doanh thu					
+	Phần bán hàng	Công cụ						
+48	Sơ đồ tổ chức	Công cụ	Sơ đồ hình case thể mối quan hệ Chi nhánh - Shop/điểm bán					
+49	Triển khai thực hiện		Khi triển khai tại CN: lộ trình triển khai cụ thể ở của từng phần hành như thế nào? Tài liệu hướng dẫn + thời gian đào tạo hướng dẫn sử dụng cụ thể cho BP thực hiện trực tiếp và BP Quản lý các phần hành cho từng bộ phận trước khi triển khai 		5/8/2026			
+50	Phần mua hàng		"- NCC mới, các mã hàng mới chưa được cập nhật
+- Không phân rõ theo từng đầu mục Báo cáo của BP mua hàng như PM HTsoft, giao diện báo rất rối, màu mè"		5/8/2026			
+51	Bán hàng		- Số liệu cập nhật chậm với nghiệp vụ phát sinh, hàng xuất bán rồi -> PM chưa trừ nên không chưa khớp thực tế		5/8/2026			
+52	Kho		Chưa xem được tồn kho, tồn shop chi tiết		5/8/2026			
