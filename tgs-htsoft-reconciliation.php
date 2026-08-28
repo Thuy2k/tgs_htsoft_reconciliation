@@ -277,25 +277,47 @@ class TGS_HTSOFT_Reconciliation {
                 $today_end
             ));
 
-            // Ghi chú phiếu bán hàng
-            $sales_notes = array();
+            /*
+             * Ghi chú phiếu bán hàng.
+             *
+             * Phiếu MỚI: local_ledger_note CHÍNH LÀ ghi chú NVBH (không bọc).
+             * Phiếu CŨ: "Đơn POS <mã> [| Ghi chú: <note>]" — chỉ lấy phiếu CÓ
+             * ghi chú thật, và bóc bỏ tiền tố khi hiển thị.
+             */
             $notes_results = $wpdb->get_results($wpdb->prepare(
                 "SELECT local_ledger_note, created_at
                  FROM {$blog_prefix}local_ledger
                  WHERE local_ledger_type = 10
                  AND local_ledger_approver_status = 1
-                 AND local_ledger_note LIKE %s
+                 AND local_ledger_note IS NOT NULL
+                 AND TRIM(local_ledger_note) <> ''
+                 AND (
+                     local_ledger_note LIKE %s          -- phiếu cũ có ghi chú
+                     OR local_ledger_note NOT LIKE %s   -- phiếu mới (không phải tiêu đề Đơn POS)
+                 )
                  AND created_at BETWEEN %s AND %s
                  ORDER BY created_at DESC",
-                '%Ghi chú%',
+                '%| Ghi chú:%',
+                'Đơn POS %',
                 $today_start,
                 $today_end
             ));
 
+            $sales_notes = array();
             if ($notes_results) {
                 foreach ($notes_results as $note_row) {
+                    $raw = trim((string) $note_row->local_ledger_note);
+                    // Bóc "Đơn POS <mã> | Ghi chú: " của phiếu cũ
+                    if (preg_match('/\|\s*Ghi chú:\s*(.+)$/us', $raw, $m)) {
+                        $raw = trim((string) $m[1]);
+                    } elseif (strpos($raw, 'Đơn POS ') === 0) {
+                        $raw = '';
+                    }
+                    if ($raw === '') {
+                        continue;
+                    }
                     $sales_notes[] = array(
-                        'note' => $note_row->local_ledger_note,
+                        'note' => $raw,
                         'created_at' => $note_row->created_at,
                     );
                 }
