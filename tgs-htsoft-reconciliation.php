@@ -234,6 +234,35 @@ class TGS_HTSOFT_Reconciliation {
                 );
             }
 
+            /*
+             * ─── SẢN PHẨM CHỈ CÓ Ở HỆ THỐNG (THỪA), KHÔNG CÓ TRONG EXCEL HTSOFT ──
+             *
+             * File Excel là chiều HTsoft. Website thực có thể đang THỪA mã hàng (nhập
+             * linh tinh) mà HTsoft không có → không nằm trong Excel nên trước đây bị bỏ
+             * sót, báo "không lệch" trong khi website vẫn còn tồn. Lấy thêm các mã này,
+             * coi tồn Excel = 0, để đối chiếu và cân về 0 cho khớp HTsoft. Đánh dấu
+             * 'system_only' để giao diện phân biệt (mã thừa ở hệ thống).
+             */
+            $excel_skus = array();
+            foreach ($excel_items as $it) {
+                if (isset($it['sku'])) {
+                    $excel_skus[] = (string) $it['sku'];
+                }
+            }
+            $system_only = $calculator->calculate_system_only_inventory($excel_skus);
+            foreach ($system_only as $so_sku => $so_info) {
+                $so_qty = floatval($so_info['quantity']);
+                $comparison[] = array(
+                    'sku' => (string) $so_sku,
+                    'product_name' => $so_info['global_product_name'] !== '' ? $so_info['global_product_name'] : (string) $so_sku,
+                    'excel_qty' => 0,
+                    'system_qty' => $so_qty,
+                    'diff' => $so_qty, // system - 0 (Excel không có mã này)
+                    'global_product_name' => $so_info['global_product_name'],
+                    'system_only' => true,
+                );
+            }
+
             // Lấy thống kê ngày hôm nay
             $blog_prefix = $wpdb->get_blog_prefix($blog_id);
             $today_start = date('Y-m-d 00:00:00');

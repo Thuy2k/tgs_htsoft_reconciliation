@@ -303,7 +303,7 @@ jQuery(document).ready(function($) {
                         data-system-qty="${item.system_qty}"
                         data-name="${item.global_product_name || item.product_name}"></td>
                     <td><code>${item.sku}</code></td>
-                    <td>${item.global_product_name || item.product_name}</td>
+                    <td>${item.global_product_name || item.product_name}${item.system_only ? ' <span class="badge bg-warning text-dark" title="Mã hàng không có trong file HTSOFT — website đang thừa tồn, cân về 0">Thừa (hệ thống)</span>' : ''}</td>
                     <td class="text-end">${formatNumber(item.excel_qty)}</td>
                     <td class="text-end">${formatNumber(item.system_qty)}</td>
                     <td class="text-end ${diffClass}">${diffText}</td>
