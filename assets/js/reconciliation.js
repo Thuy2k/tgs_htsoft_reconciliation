@@ -199,6 +199,11 @@ jQuery(document).ready(function($) {
         const siteName = data.site_name || `Website ${siteCode}`;
         const displayName = siteName.length > 30 ? siteName.substring(0, 30) + '...' : siteName;
 
+        // Đếm số mã LỆCH SL đi đường (Excel HTsoft vs hệ thống) — chỉ cảnh báo, không cân.
+        const transitDiffCount = data.comparison.filter(function (it) {
+            return Math.abs(parseFloat(it.transit_diff || 0)) > 0.01;
+        }).length;
+
         const statsHtml = `
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <h5 class="mb-0">
@@ -219,21 +224,30 @@ jQuery(document).ready(function($) {
                     <h6>Sản phẩm khớp</h6>
                     <div class="stat-value text-success">${data.total_items - data.items_with_diff}</div>
                 </div>
+                <div class="htsoft-stat-box">
+                    <h6>Lệch SL đi đường</h6>
+                    <div class="stat-value text-warning">${transitDiffCount}</div>
+                </div>
             </div>
         `;
 
-        // Sắp xếp: chênh lệch lớn nhất lên đầu, rồi đến chênh lệch nhỏ, cuối cùng là khớp
+        // Sắp xếp: mã CÓ chênh lệch (tồn HOẶC SL đi đường) lên đầu, rồi đến khớp.
+        // Trong nhóm lệch: ưu tiên lệch tồn lớn nhất, rồi đến lệch SL đi đường.
         data.comparison.sort((a, b) => {
             const diffA = Math.abs(a.diff);
             const diffB = Math.abs(b.diff);
+            const trA = Math.abs(parseFloat(a.transit_diff || 0));
+            const trB = Math.abs(parseFloat(b.transit_diff || 0));
+            const attnA = (diffA > 0.01 || trA > 0.01) ? 1 : 0;
+            const attnB = (diffB > 0.01 || trB > 0.01) ? 1 : 0;
 
-            // Items có chênh lệch lên trước
-            if (diffA > 0.01 && diffB <= 0.01) return -1;
-            if (diffA <= 0.01 && diffB > 0.01) return 1;
+            // Mã cần chú ý (có lệch bất kỳ) lên trước
+            if (attnA !== attnB) return attnB - attnA;
 
-            // Cả 2 đều có chênh lệch: sắp xếp theo độ lớn giảm dần
-            if (diffA > 0.01 && diffB > 0.01) {
-                return diffB - diffA;
+            // Cùng nhóm lệch: lệch tồn giảm dần, rồi lệch đi đường giảm dần
+            if (attnA === 1) {
+                if (diffB !== diffA) return diffB - diffA;
+                return trB - trA;
             }
 
             // Cả 2 đều khớp: giữ nguyên thứ tự
@@ -262,25 +276,46 @@ jQuery(document).ready(function($) {
                     <thead class="table-light">
                         <tr>
                             <th style="width: 40px"><input type="checkbox" class="form-check-input select-all-${siteCode}"></th>
-                            <th style="width: 12%">SKU</th>
-                            <th style="width: 35%">Tên sản phẩm</th>
-                            <th style="width: 13%" class="text-end">Tồn Excel</th>
-                            <th style="width: 13%" class="text-end">Tồn hệ thống</th>
-                            <th style="width: 13%" class="text-end">Chênh lệch</th>
+                            <th style="width: 10%">SKU</th>
+                            <th style="width: 28%">Tên sản phẩm</th>
+                            <th style="width: 11%" class="text-end">Tồn Excel</th>
+                            <th style="width: 11%" class="text-end">Tồn hệ thống</th>
+                            <th style="width: 11%" class="text-end">Chênh lệch</th>
+                            <th style="width: 9%" class="text-end" title="SL đi đường trên file Excel HTsoft (cột 9)">Đi đường (Excel)</th>
+                            <th style="width: 9%" class="text-end" title="SL đi đường (hàng đang về) trên hệ thống — chỉ đối chiếu, không cân">Đi đường (HT)</th>
                         </tr>
                     </thead>
                     <tbody>
         `;
 
+        // Format số: nếu là số nguyên thì bỏ .00, nếu có phần thập phân thì giữ 2 chữ số
+        const formatNumber = (num) => {
+            return num % 1 === 0 ? num.toFixed(0) : num.toFixed(2);
+        };
+        // Format có dấu chấm ngăn nghìn cho dòng TỔNG (giống báo cáo tồn kho POS: 19.577)
+        const formatTotal = (num) => {
+            const rounded = Math.round((num + Number.EPSILON) * 100) / 100;
+            return rounded.toLocaleString('vi-VN', { maximumFractionDigits: 2 });
+        };
+
+        // Cộng dồn để hiển thị dòng TỔNG ở cuối bảng.
+        let totalExcel = 0, totalSystem = 0, totalDiff = 0, totalExcelTransit = 0, totalSystemTransit = 0;
+
         data.comparison.forEach(item => {
             const diffClass = item.diff > 0 ? 'diff-positive' : (item.diff < 0 ? 'diff-negative' : 'diff-zero');
 
-            // Format số: nếu là số nguyên thì bỏ .00, nếu có phần thập phân thì giữ 2 chữ số
-            const formatNumber = (num) => {
-                return num % 1 === 0 ? num.toFixed(0) : num.toFixed(2);
-            };
-
             const diffText = item.diff > 0 ? `+${formatNumber(item.diff)}` : formatNumber(item.diff);
+
+            const excelTransit = parseFloat(item.excel_transit || 0);
+            const systemTransit = parseFloat(item.system_transit || 0);
+            const transitDiff = parseFloat(item.transit_diff || (systemTransit - excelTransit));
+            const transitMismatch = Math.abs(transitDiff) > 0.01;
+
+            totalExcel += parseFloat(item.excel_qty || 0);
+            totalSystem += parseFloat(item.system_qty || 0);
+            totalDiff += parseFloat(item.diff || 0);
+            totalExcelTransit += excelTransit;
+            totalSystemTransit += systemTransit;
 
             // Phân loại độ chênh lệch để highlight
             let rowClass = '';
@@ -292,6 +327,12 @@ jQuery(document).ready(function($) {
             } else if (absDiff > 0.01) {
                 rowClass = 'table-info'; // Chênh lệch nhỏ
             }
+
+            // Ô SL đi đường: nếu lệch thì tô vàng + gắn ⚠ để chị kế toán thấy ngay.
+            const transitCellClass = transitMismatch ? 'text-end fw-bold text-warning bg-warning-subtle' : 'text-end text-muted';
+            const transitWarn = transitMismatch
+                ? ` <i class="bx bx-error-circle" title="Lệch SL đi đường: Excel ${formatNumber(excelTransit)} ≠ hệ thống ${formatNumber(systemTransit)}"></i>`
+                : '';
 
             tableHtml += `
                 <tr class="${rowClass}">
@@ -307,12 +348,27 @@ jQuery(document).ready(function($) {
                     <td class="text-end">${formatNumber(item.excel_qty)}</td>
                     <td class="text-end">${formatNumber(item.system_qty)}</td>
                     <td class="text-end ${diffClass}">${diffText}</td>
+                    <td class="text-end">${formatNumber(excelTransit)}</td>
+                    <td class="${transitCellClass}">${formatNumber(systemTransit)}${transitWarn}</td>
                 </tr>
             `;
         });
 
+        const totalDiffText = totalDiff > 0 ? `+${formatTotal(totalDiff)}` : formatTotal(totalDiff);
+        const totalTransitMismatch = Math.abs(totalSystemTransit - totalExcelTransit) > 0.01;
+
         tableHtml += `
                     </tbody>
+                    <tfoot>
+                        <tr class="table-secondary fw-bold" style="border-top: 2px solid #adb5bd;">
+                            <td colspan="3" class="text-end">TỔNG (${data.comparison.length} mã)</td>
+                            <td class="text-end">${formatTotal(totalExcel)}</td>
+                            <td class="text-end">${formatTotal(totalSystem)}</td>
+                            <td class="text-end">${totalDiffText}</td>
+                            <td class="text-end">${formatTotal(totalExcelTransit)}</td>
+                            <td class="text-end ${totalTransitMismatch ? 'text-warning' : ''}">${formatTotal(totalSystemTransit)}</td>
+                        </tr>
+                    </tfoot>
                 </table>
             </div>
         `;

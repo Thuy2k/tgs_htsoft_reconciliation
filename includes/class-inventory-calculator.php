@@ -200,4 +200,48 @@ class TGS_HTSOFT_Inventory_Calculator {
 
         return $out;
     }
+
+    /**
+     * SL ĐI ĐƯỜNG (hàng đang về) theo từng SKU — CHỈ để đối chiếu với cột "SL đi đường"
+     * của file Excel HTsoft, KHÔNG dùng để cân tồn.
+     *
+     * Công thức khớp HỆT báo cáo tồn kho POS (class-tgs-pos-stock-report-service::in_transit):
+     * phiếu NHẬP (type=1) CHỜ DUYỆT có cha là phiếu CHUYỂN KHO (type=13) CHỜ DUYỆT.
+     * Trả [sku => qty] cho cả blog (lookup theo SKU ở tầng gọi).
+     *
+     * @return array
+     */
+    public function calculate_in_transit_all() {
+        global $wpdb;
+
+        switch_to_blog($this->blog_id);
+        $prefix  = $wpdb->prefix;
+        $items   = $prefix . 'local_ledger_item';
+        $ledgers = $prefix . 'local_ledger';
+
+        $rows = $wpdb->get_results(
+            "SELECT li.local_product_sku AS sku, COALESCE(SUM(ABS(li.quantity)), 0) AS qty
+               FROM {$ledgers} imp
+               INNER JOIN {$ledgers} parent ON parent.local_ledger_id = imp.local_ledger_parent_id
+               INNER JOIN {$items} li ON li.local_ledger_id = imp.local_ledger_id
+              WHERE imp.local_ledger_type = 1
+                AND (imp.local_ledger_approver_status IS NULL OR imp.local_ledger_approver_status = 0)
+                AND parent.local_ledger_type = 13
+                AND (parent.local_ledger_approver_status IS NULL OR parent.local_ledger_approver_status = 0)
+                AND (imp.is_deleted = 0 OR imp.is_deleted IS NULL)
+                AND (parent.is_deleted = 0 OR parent.is_deleted IS NULL)
+                AND (li.is_deleted = 0 OR li.is_deleted IS NULL)
+                AND li.local_product_sku IS NOT NULL AND li.local_product_sku <> ''
+              GROUP BY li.local_product_sku"
+        );
+
+        $map = array();
+        foreach ((array) $rows as $r) {
+            $map[(string) $r->sku] = (float) $r->qty;
+        }
+
+        restore_current_blog();
+
+        return $map;
+    }
 }

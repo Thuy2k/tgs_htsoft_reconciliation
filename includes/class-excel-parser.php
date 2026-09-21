@@ -45,6 +45,8 @@ class TGS_HTSOFT_Excel_Parser {
             $sku = $this->get_cell_value($row, $header_row['sku_col']);
             $product_name = $this->get_cell_value($row, $header_row['name_col']);
             $quantity = $this->get_cell_value($row, $header_row['qty_col']);
+            // SL đi đường (cột ~9 trong Excel HTsoft) — chỉ để đối chiếu, không cân.
+            $transit = $this->get_cell_value($row, $header_row['transit_col']);
 
             // Bỏ qua dòng trống
             if (empty($site_code) || empty($sku)) {
@@ -59,6 +61,7 @@ class TGS_HTSOFT_Excel_Parser {
 
             // Chuẩn hóa quantity
             $quantity = $this->parse_quantity($quantity);
+            $transit = $this->parse_quantity($transit);
 
             // Nhóm theo site_code
             if (!isset($grouped_data[$site_code])) {
@@ -72,6 +75,7 @@ class TGS_HTSOFT_Excel_Parser {
                 'sku' => trim($sku),
                 'product_name' => trim($product_name),
                 'quantity' => $quantity,
+                'excel_transit' => $transit,
             );
         }
 
@@ -105,12 +109,16 @@ class TGS_HTSOFT_Excel_Parser {
             $sku_col = null;
             $name_col = null;
             $qty_col = null;
+            $transit_col = null;
 
             foreach ($row as $col_index => $cell) {
                 $cell_lower = mb_strtolower(trim($cell));
 
                 // Loại bỏ dấu cách thừa và normalize
                 $cell_normalized = preg_replace('/\s+/', ' ', $cell_lower);
+                // Bản BỎ DẤU tiếng Việt để khớp linh hoạt (header thực tế có thể là
+                // "SL di đường" — trộn có/không dấu — nên so khớp kiểu "chứa" trên bản ascii).
+                $cell_ascii = $this->strip_vn($cell);
 
                 if (in_array($cell_normalized, array('kho', 'mã kho', 'ma kho', 'cửa hàng', 'cua hang', 'chi nhánh', 'chi nhanh'))) {
                     $kho_col = $col_index;
@@ -118,6 +126,9 @@ class TGS_HTSOFT_Excel_Parser {
                     $sku_col = $col_index;
                 } elseif (in_array($cell_normalized, array('tên hàng', 'ten hang', 'tên sản phẩm', 'ten san pham', 'sản phẩm', 'san pham'))) {
                     $name_col = $col_index;
+                } elseif (strpos($cell_ascii, 'di duong') !== false) {
+                    // Cột "SL đi đường" (cột I). Kiểm tra TRƯỚC "số lượng" vì header cũng chứa "sl".
+                    $transit_col = $col_index;
                 } elseif (in_array($cell_normalized, array('số lượng', 'so luong', 'tồn', 'ton', 'tồn kho', 'ton kho', 'sl', 'quantity'))) {
                     $qty_col = $col_index;
                 }
@@ -131,11 +142,38 @@ class TGS_HTSOFT_Excel_Parser {
                     'sku_col' => $sku_col,
                     'name_col' => $name_col, // có thể null
                     'qty_col' => $qty_col,
+                    'transit_col' => $transit_col, // có thể null (file cũ không có cột này)
                 );
             }
         }
 
         return null;
+    }
+
+    /**
+     * Bỏ dấu tiếng Việt + lowercase + gộp khoảng trắng.
+     * Dùng để nhận diện header linh hoạt (vd "SL di đường" ~ "sl di duong").
+     */
+    private function strip_vn($str) {
+        $str = mb_strtolower(trim((string) $str), 'UTF-8');
+        $from = array(
+            'à','á','ả','ã','ạ','ă','ằ','ắ','ẳ','ẵ','ặ','â','ầ','ấ','ẩ','ẫ','ậ',
+            'è','é','ẻ','ẽ','ẹ','ê','ề','ế','ể','ễ','ệ',
+            'ì','í','ỉ','ĩ','ị',
+            'ò','ó','ỏ','õ','ọ','ô','ồ','ố','ổ','ỗ','ộ','ơ','ờ','ớ','ở','ỡ','ợ',
+            'ù','ú','ủ','ũ','ụ','ư','ừ','ứ','ử','ữ','ự',
+            'ỳ','ý','ỷ','ỹ','ỵ','đ',
+        );
+        $to = array(
+            'a','a','a','a','a','a','a','a','a','a','a','a','a','a','a','a','a',
+            'e','e','e','e','e','e','e','e','e','e','e',
+            'i','i','i','i','i',
+            'o','o','o','o','o','o','o','o','o','o','o','o','o','o','o','o','o',
+            'u','u','u','u','u','u','u','u','u','u','u',
+            'y','y','y','y','y','d',
+        );
+        $str = str_replace($from, $to, $str);
+        return preg_replace('/\s+/', ' ', $str);
     }
 
     /**

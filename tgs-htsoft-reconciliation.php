@@ -215,6 +215,8 @@ class TGS_HTSOFT_Reconciliation {
             // Tính tồn từ hệ thống
             $calculator = new TGS_HTSOFT_Inventory_Calculator($blog_id);
             $system_inventory = $calculator->calculate_inventory($excel_items);
+            // SL đi đường (hàng đang về) — chỉ đối chiếu, không cân.
+            $transit_map = $calculator->calculate_in_transit_all();
 
             // So sánh
             $comparison = array();
@@ -224,12 +226,18 @@ class TGS_HTSOFT_Reconciliation {
                 $system_qty = isset($system_inventory[$sku]) ? $system_inventory[$sku]['quantity'] : 0;
                 $diff = $system_qty - $excel_qty;
 
+                $excel_transit = isset($item['excel_transit']) ? floatval($item['excel_transit']) : 0;
+                $system_transit = isset($transit_map[$sku]) ? floatval($transit_map[$sku]) : 0;
+
                 $comparison[] = array(
                     'sku' => $sku,
                     'product_name' => $item['product_name'],
                     'excel_qty' => $excel_qty,
                     'system_qty' => $system_qty,
                     'diff' => $diff,
+                    'excel_transit' => $excel_transit,
+                    'system_transit' => $system_transit,
+                    'transit_diff' => $system_transit - $excel_transit,
                     'global_product_name' => isset($system_inventory[$sku]) ? $system_inventory[$sku]['global_product_name'] : '',
                 );
             }
@@ -252,12 +260,16 @@ class TGS_HTSOFT_Reconciliation {
             $system_only = $calculator->calculate_system_only_inventory($excel_skus);
             foreach ($system_only as $so_sku => $so_info) {
                 $so_qty = floatval($so_info['quantity']);
+                $so_transit = isset($transit_map[(string) $so_sku]) ? floatval($transit_map[(string) $so_sku]) : 0;
                 $comparison[] = array(
                     'sku' => (string) $so_sku,
                     'product_name' => $so_info['global_product_name'] !== '' ? $so_info['global_product_name'] : (string) $so_sku,
                     'excel_qty' => 0,
                     'system_qty' => $so_qty,
                     'diff' => $so_qty, // system - 0 (Excel không có mã này)
+                    'excel_transit' => 0, // Excel HTsoft không có mã này
+                    'system_transit' => $so_transit,
+                    'transit_diff' => $so_transit,
                     'global_product_name' => $so_info['global_product_name'],
                     'system_only' => true,
                 );
