@@ -53,11 +53,10 @@ class TGS_HTSOFT_Excel_Parser {
                 continue;
             }
 
-            // Chuẩn hóa site_code (xử lý trường hợp 08004 -> 8004)
-            $site_code = ltrim($site_code, '0');
-            if (empty($site_code)) {
-                $site_code = '0';
-            }
+            // GIỮ NGUYÊN mã kho ĐÚNG như Excel (kể cả số 0 ở đầu, vd "02001").
+            // Trước đây ltrim('0') cắt số 0 đầu -> "02001" thành "2001" -> tra không thấy
+            // website. Mã website (tgs_site_code) có thể có số 0 ở đầu, nên không được cắt.
+            $site_code = trim($site_code);
 
             // Chuẩn hóa quantity
             $quantity = $this->parse_quantity($quantity);

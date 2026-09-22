@@ -161,10 +161,12 @@ class TGS_HTSOFT_Reconciliation {
             foreach ($result['tabs'] as &$tab) {
                 $site_code = $tab['site_code'];
 
-                // Tìm blog từ site_code
+                // Tìm blog từ site_code. Khớp mã ĐÚNG như Excel trước (vd "02001"),
+                // fallback sang mã đã bỏ số 0 đầu để tương thích dữ liệu cũ.
                 $blog = $wpdb->get_row($wpdb->prepare(
-                    "SELECT blog_id FROM {$wpdb->blogs} WHERE tgs_site_code = %s",
-                    $site_code
+                    "SELECT blog_id FROM {$wpdb->blogs} WHERE tgs_site_code = %s OR tgs_site_code = %s LIMIT 1",
+                    $site_code,
+                    ltrim($site_code, '0')
                 ));
 
                 if ($blog) {
@@ -195,10 +197,12 @@ class TGS_HTSOFT_Reconciliation {
                 throw new Exception("Dữ liệu Excel không hợp lệ");
             }
 
-            // Tìm blog_id từ tgs_site_code
+            // Tìm blog_id từ tgs_site_code. Khớp mã ĐÚNG như Excel trước (vd "02001"),
+            // fallback sang mã đã bỏ số 0 đầu để tương thích dữ liệu cũ.
             $blog = $wpdb->get_row($wpdb->prepare(
-                "SELECT blog_id, domain, path FROM {$wpdb->blogs} WHERE tgs_site_code = %s",
-                $site_code
+                "SELECT blog_id, domain, path FROM {$wpdb->blogs} WHERE tgs_site_code = %s OR tgs_site_code = %s LIMIT 1",
+                $site_code,
+                ltrim($site_code, '0')
             ));
 
             if (!$blog) {
