@@ -502,6 +502,9 @@ class TGS_HTSOFT_Snapshot_Module {
                 'updated_at'       => current_time('mysql'),
             ), array('snapshot_id' => $snapshot_id));
 
+            // Cổng chặn bán ở POS đọc "bản đã chốt mới nhất" qua cache (tgs_cache) → làm mới.
+            do_action('tgs_cache_table_changed', 'global_htsoft_recon_snapshot');
+
             wp_send_json_success(array(
                 'snapshot_id'      => $snapshot_id,
                 'snapshot_code'    => $snapshot->snapshot_code,
@@ -531,6 +534,7 @@ class TGS_HTSOFT_Snapshot_Module {
             array('is_deleted' => 1, 'updated_at' => current_time('mysql')),
             array('snapshot_id' => $snapshot_id)
         );
+        do_action('tgs_cache_table_changed', 'global_htsoft_recon_snapshot');
 
         wp_send_json_success(array('snapshot_id' => $snapshot_id));
     }
