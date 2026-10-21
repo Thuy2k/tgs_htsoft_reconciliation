@@ -224,33 +224,13 @@ class TGS_HTSOFT_Inventory_Calculator {
     }
 
     /**
-     * SL ĐI ĐƯỜNG (hàng đang về) theo từng SKU — CHỈ để đối chiếu với cột "SL đi đường" của file Excel, KHÔNG dùng để cân
-     * tồn. = phiếu chuyển kho global bên đi đã duyệt xuất, website này CHƯA nhận (import_status = 0; 2 = từ chối).
+     * SL ĐI ĐƯỜNG theo từng SKU — CHỈ để đối chiếu với cột "SL đi đường" của file Excel, KHÔNG dùng để cân tồn.
+     * Xem TGS_Global_Transfer::in_transit().
      *
      * @return array [sku => qty]
      */
     public function calculate_in_transit_all() {
-        global $wpdb;
-
-        if (!class_exists('TGS_Global_Transfer') || !TGS_Global_Transfer::ready()) {
-            return array();
-        }
-        $T = TGS_Global_Transfer::table();
-        $I = TGS_Global_Transfer::item_table();
-        $rows = $wpdb->get_results($wpdb->prepare(
-            "SELECT i.sku AS sku, COALESCE(SUM(i.quantity), 0) AS qty
-               FROM {$T} t
-               INNER JOIN {$I} i ON i.transfer_id = t.transfer_id AND i.is_deleted = 0
-              WHERE t.to_blog_id = %d AND t.is_deleted = 0
-                AND t.export_status = 1 AND t.import_status = 0
-                AND i.sku IS NOT NULL AND i.sku <> ''
-              GROUP BY i.sku",
-            (int) $this->blog_id
-        ));
-        $map = array();
-        foreach ((array) $rows as $r) {
-            $map[(string) $r->sku] = (float) $r->qty;
-        }
+        $map = class_exists('TGS_Global_Transfer') ? TGS_Global_Transfer::in_transit((int) $this->blog_id) : array();
         return $map;
     }
 
