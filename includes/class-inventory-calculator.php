@@ -85,6 +85,14 @@ class TGS_HTSOFT_Inventory_Calculator {
             );
         }
 
+        // Cộng chuyển kho global (phiếu chuyển kho mới không còn ghi local_ledger): bên đi trừ, bên đến cộng.
+        foreach (self::global_transfer_net($this->blog_id, $skus) as $sku => $q) {
+            if (!isset($inventory[$sku])) {
+                $inventory[$sku] = array('quantity' => 0, 'global_product_name' => '');
+            }
+            $inventory[$sku]['quantity'] += $q;
+        }
+
         // Lấy tên sản phẩm từ global
         $global_query = "
             SELECT global_product_sku, global_product_name
@@ -155,10 +163,24 @@ class TGS_HTSOFT_Inventory_Calculator {
                 AND li.local_product_sku IS NOT NULL
                 AND li.local_product_sku <> ''
             GROUP BY li.local_product_sku
-            HAVING ABS(total_quantity) > 0.001
         ";
 
         $rows = $wpdb->get_results($query);
+
+        // Tồn ròng = local_ledger + chuyển kho global; lọc tồn ≠ 0 SAU khi cộng (không lọc bằng HAVING được nữa).
+        $totals = array();
+        foreach ((array) $rows as $r) {
+            $totals[(string) $r->sku] = floatval($r->total_quantity);
+        }
+        foreach (self::global_transfer_net($this->blog_id) as $sku => $q) {
+            $totals[(string) $sku] = ($totals[(string) $sku] ?? 0) + $q;
+        }
+        $rows = array();
+        foreach ($totals as $sku => $q) {
+            if (abs($q) > 0.001) {
+                $rows[] = (object) array('sku' => (string) $sku, 'total_quantity' => $q);
+            }
+        }
 
         // Tập SKU Excel để loại (so khớp đúng chuỗi như calculate_inventory).
         $exclude = array();
@@ -240,8 +262,39 @@ class TGS_HTSOFT_Inventory_Calculator {
             $map[(string) $r->sku] = (float) $r->qty;
         }
 
+        // Chuyển kho global: phiếu bên đi đã duyệt xuất, website này CHƯA nhận (import_status = 0; 2 = từ chối).
+        if (class_exists('TGS_Global_Transfer') && TGS_Global_Transfer::ready()) {
+            $T = TGS_Global_Transfer::table();
+            $I = TGS_Global_Transfer::item_table();
+            $grows = $wpdb->get_results($wpdb->prepare(
+                "SELECT i.sku AS sku, COALESCE(SUM(i.quantity), 0) AS qty
+                   FROM {$T} t
+                   INNER JOIN {$I} i ON i.transfer_id = t.transfer_id AND i.is_deleted = 0
+                  WHERE t.to_blog_id = %d AND t.is_deleted = 0
+                    AND t.export_status = 1 AND t.import_status = 0
+                    AND i.sku IS NOT NULL AND i.sku <> ''
+                  GROUP BY i.sku",
+                (int) $this->blog_id
+            ));
+            foreach ((array) $grows as $r) {
+                $map[(string) $r->sku] = ($map[(string) $r->sku] ?? 0) + (float) $r->qty;
+            }
+        }
+
         restore_current_blog();
 
         return $map;
+    }
+
+    /**
+     * Số lượng ròng từ chuyển kho global (wp_global_transfer) của website: [sku => qty có dấu].
+     * $skus rỗng = mọi mã. Chưa có bảng / chưa nạp class thì trả rỗng.
+     */
+    private static function global_transfer_net($blog_id, array $skus = array()) {
+        if (!class_exists('TGS_Global_Transfer') || !TGS_Global_Transfer::ready()) {
+            return array();
+        }
+        $skus = array_values(array_filter(array_map('strval', $skus), 'strlen'));
+        return TGS_Global_Transfer::net((int) $blog_id, $skus, 'sku');
     }
 }
