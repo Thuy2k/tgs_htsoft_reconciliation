@@ -224,65 +224,33 @@ class TGS_HTSOFT_Inventory_Calculator {
     }
 
     /**
-     * SL ĐI ĐƯỜNG (hàng đang về) theo từng SKU — CHỈ để đối chiếu với cột "SL đi đường"
-     * của file Excel HTsoft, KHÔNG dùng để cân tồn.
+     * SL ĐI ĐƯỜNG (hàng đang về) theo từng SKU — CHỈ để đối chiếu với cột "SL đi đường" của file Excel, KHÔNG dùng để cân
+     * tồn. = phiếu chuyển kho global bên đi đã duyệt xuất, website này CHƯA nhận (import_status = 0; 2 = từ chối).
      *
-     * Công thức khớp HỆT báo cáo tồn kho POS (class-tgs-pos-stock-report-service::in_transit):
-     * phiếu NHẬP (type=1) CHỜ DUYỆT có cha là phiếu CHUYỂN KHO (type=13) CHỜ DUYỆT.
-     * Trả [sku => qty] cho cả blog (lookup theo SKU ở tầng gọi).
-     *
-     * @return array
+     * @return array [sku => qty]
      */
     public function calculate_in_transit_all() {
         global $wpdb;
 
-        switch_to_blog($this->blog_id);
-        $prefix  = $wpdb->prefix;
-        $items   = $prefix . 'local_ledger_item';
-        $ledgers = $prefix . 'local_ledger';
-
-        $rows = $wpdb->get_results(
-            "SELECT li.local_product_sku AS sku, COALESCE(SUM(ABS(li.quantity)), 0) AS qty
-               FROM {$ledgers} imp
-               INNER JOIN {$ledgers} parent ON parent.local_ledger_id = imp.local_ledger_parent_id
-               INNER JOIN {$items} li ON li.local_ledger_id = imp.local_ledger_id
-              WHERE imp.local_ledger_type = 1
-                AND (imp.local_ledger_approver_status IS NULL OR imp.local_ledger_approver_status = 0)
-                AND parent.local_ledger_type = 13
-                AND (parent.local_ledger_approver_status IS NULL OR parent.local_ledger_approver_status = 0)
-                AND (imp.is_deleted = 0 OR imp.is_deleted IS NULL)
-                AND (parent.is_deleted = 0 OR parent.is_deleted IS NULL)
-                AND (li.is_deleted = 0 OR li.is_deleted IS NULL)
-                AND li.local_product_sku IS NOT NULL AND li.local_product_sku <> ''
-              GROUP BY li.local_product_sku"
-        );
-
+        if (!class_exists('TGS_Global_Transfer') || !TGS_Global_Transfer::ready()) {
+            return array();
+        }
+        $T = TGS_Global_Transfer::table();
+        $I = TGS_Global_Transfer::item_table();
+        $rows = $wpdb->get_results($wpdb->prepare(
+            "SELECT i.sku AS sku, COALESCE(SUM(i.quantity), 0) AS qty
+               FROM {$T} t
+               INNER JOIN {$I} i ON i.transfer_id = t.transfer_id AND i.is_deleted = 0
+              WHERE t.to_blog_id = %d AND t.is_deleted = 0
+                AND t.export_status = 1 AND t.import_status = 0
+                AND i.sku IS NOT NULL AND i.sku <> ''
+              GROUP BY i.sku",
+            (int) $this->blog_id
+        ));
         $map = array();
         foreach ((array) $rows as $r) {
             $map[(string) $r->sku] = (float) $r->qty;
         }
-
-        // Chuyển kho global: phiếu bên đi đã duyệt xuất, website này CHƯA nhận (import_status = 0; 2 = từ chối).
-        if (class_exists('TGS_Global_Transfer') && TGS_Global_Transfer::ready()) {
-            $T = TGS_Global_Transfer::table();
-            $I = TGS_Global_Transfer::item_table();
-            $grows = $wpdb->get_results($wpdb->prepare(
-                "SELECT i.sku AS sku, COALESCE(SUM(i.quantity), 0) AS qty
-                   FROM {$T} t
-                   INNER JOIN {$I} i ON i.transfer_id = t.transfer_id AND i.is_deleted = 0
-                  WHERE t.to_blog_id = %d AND t.is_deleted = 0
-                    AND t.export_status = 1 AND t.import_status = 0
-                    AND i.sku IS NOT NULL AND i.sku <> ''
-                  GROUP BY i.sku",
-                (int) $this->blog_id
-            ));
-            foreach ((array) $grows as $r) {
-                $map[(string) $r->sku] = ($map[(string) $r->sku] ?? 0) + (float) $r->qty;
-            }
-        }
-
-        restore_current_blog();
-
         return $map;
     }
 
